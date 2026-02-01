@@ -302,6 +302,7 @@
                 draggingTable: null,
                 draggingField: null,
                 connectingFrom: null,
+                showConnectionLine: false,
                 mousePos: { x: 0, y: 0 },
                 renamingTableId: null,
                 activeView: 'board', // 'board' | 'list' | 'tree'
@@ -987,8 +988,9 @@
             zoomOut: () => { state.view.scale = Math.max(state.view.scale * 0.8, 0.2); app.saveState(); app.updateCanvasTransform(); },
             openModal: () => { const backdrop = document.getElementById('modal-backdrop'); const content = document.getElementById('modal-content'); backdrop.classList.remove('hidden'); setTimeout(() => { backdrop.classList.remove('opacity-0'); content.classList.remove('scale-95'); content.classList.add('scale-100'); }, 10); document.getElementById('new-table-name').focus(); },
             closeModal: () => { const backdrop = document.getElementById('modal-backdrop'); const content = document.getElementById('modal-content'); backdrop.classList.add('opacity-0'); content.classList.remove('scale-100'); content.classList.add('scale-95'); setTimeout(() => { backdrop.classList.add('hidden'); }, 200); },
-            startConnectionDrag: (e, id) => { e.stopPropagation(); e.preventDefault(); state.ui.connectingFrom = id; app.updateUI(); },
-            cancelConnection: () => { state.ui.connectingFrom = null; app.updateUI(); },
+            startConnectionDrag: (e, id) => { e.stopPropagation(); e.preventDefault(); state.ui.connectingFrom = id; state.ui.showConnectionLine = false; app.updateUI(); },
+            enableConnectionLine: (id) => { if (state.ui.connectingFrom === id) { state.ui.showConnectionLine = true; app.drawConnections(); } },
+            cancelConnection: () => { state.ui.connectingFrom = null; state.ui.showConnectionLine = false; app.updateUI(); },
             completeConnection: (targetId) => {
                 const sourceId = state.ui.connectingFrom; if (!sourceId || sourceId === targetId) return;
                 const exists = state.relations.find(r => r.fromTableId === sourceId && r.toTableId === targetId); if (exists) { app.cancelConnection(); return; }
@@ -1049,7 +1051,7 @@
                         labelsHtml += `<div data-badge-relation-id="${rel.id}" class="relation-badge absolute flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full border shadow-sm ${badgeColor}${badgeSelectedClass} select-none pointer-events-auto" style="left: ${mid.x}px; top: ${mid.y}px; transform: translate(-50%, -50%);" onmouseover="app.highlightRelation('${rel.id}', true)" onmouseout="app.highlightRelation('${rel.id}', false)"> <span onclick="app.toggleRelationType('${rel.id}')" title="Toggle Type">${rel.type === '1:1' ? '1:1' : '1:N'}</span> <span onclick="app.deleteRelation('${rel.id}')" class="hover:text-red-600 cursor-pointer" title="Remove Relation">&times;</span> </div>`;
                     }
                 });
-                if (state.ui.connectingFrom) {
+                if (state.ui.connectingFrom && state.ui.showConnectionLine) {
                     const fromT = state.tables.find(t => t.id === state.ui.connectingFrom);
                     if (fromT) {
                         const pkField = fromT.fields.find(f => f.isPk);
@@ -1103,6 +1105,7 @@
                 el.innerHTML = headerHtml + tabsHtml + contentHtml;
                 lucide.createIcons({ root: el });
                 el.onmouseup = (e) => { if (state.ui.connectingFrom && state.ui.connectingFrom !== table.id) { e.stopPropagation(); app.completeConnection(table.id); } };
+                el.onmouseleave = (e) => { if (state.ui.connectingFrom === table.id && !state.ui.showConnectionLine) { app.enableConnectionLine(table.id); } };
             },
             toggleFieldProp: (tableId, fieldId, prop) => {
                 const table = state.tables.find(t => t.id === tableId);
