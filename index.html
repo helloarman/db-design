@@ -39,6 +39,12 @@
             cursor: text;
         }
         
+        /* Make modal content selectable */
+        #expand-modal-content,
+        #expand-modal-content * {
+            user-select: text !important;
+        }
+        
         /* Smooth transitions for tabs */
         .tab-content {
             animation: fadeIn 0.2s ease-in-out;
@@ -279,6 +285,28 @@
         </div>
     </div>
 
+    <div id="delete-table-modal-backdrop" class="hidden fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center transition-opacity opacity-0">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden transform scale-95 transition-transform p-6" id="delete-table-modal-content">
+            <div class="flex flex-col items-center text-center gap-4">
+                <div class="w-12 h-12 rounded-full bg-rose-100 text-rose-500 flex items-center justify-center">
+                    <i data-lucide="trash-2" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-gray-800">Delete Table?</h3>
+                    <p class="text-sm text-slate-500 mt-1">Table "<span id="delete-table-name" class="font-semibold text-slate-700"></span>" and all its relationships will be permanently deleted.</p>
+                </div>
+                <div class="flex gap-3 w-full mt-2">
+                    <button onclick="app.closeDeleteTableModal()" class="flex-1 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-colors">
+                        Cancel
+                    </button>
+                    <button onclick="app.confirmDeleteTable()" class="flex-1 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-medium transition-colors shadow-sm">
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="expand-modal-backdrop" class="hidden fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center transition-opacity opacity-0" onclick="if(event.target === this) app.closeExpandModal()">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden transform scale-95 transition-transform" id="expand-modal-content">
             <div class="flex items-center justify-between p-4 border-b border-slate-200 bg-slate-50">
@@ -322,19 +350,29 @@
                 activeView: 'board', // 'board' | 'list' | 'tree'
                 expandedNodes: new Set(), // stores paths like "rootId/childId"
                 animationFrameId: null,
-                selectedRelation: null
+                selectedRelation: null,
+                sqlDialect: 'mysql' // 'mysql' | 'postgresql' | 'sqlite' | 'sqlserver'
             }
         };
 
         const generators = {
-            sql: (table) => {
+            sql: (table, dialect = null) => {
+                const db = dialect || state.ui.sqlDialect || 'mysql';
+                
+                if (db === 'postgresql') return generators.sqlPostgreSQL(table);
+                if (db === 'sqlite') return generators.sqlSQLite(table);
+                if (db === 'sqlserver') return generators.sqlSQLServer(table);
+                return generators.sqlMySQL(table);
+            },
+            sqlMySQL: (table) => {
                 let sql = `CREATE TABLE ${table.name} (\n`;
                 const lines = table.fields.map(f => {
                     let typeStr = f.type;
                     if (f.type === 'foreignId') typeStr = 'BIGINT UNSIGNED';
                     if (f.type === 'ENUM' && f.enumValues) typeStr = `ENUM(${f.enumValues})`;
                     let line = `  ${f.name} ${typeStr}`;
-                    if (f.isPk) line += ' PRIMARY KEY';
+                    if (f.isPk && f.type === 'BIGINT') line += ' AUTO_INCREMENT PRIMARY KEY';
+                    else if (f.isPk) line += ' PRIMARY KEY';
                     if (!f.isNullable && !f.isPk) line += ' NOT NULL';
                     return line;
                 });
@@ -342,6 +380,91 @@
                     const fromT = state.tables.find(t => t.id === r.fromTableId);
                     const field = table.fields.find(f => f.id === r.fkFieldId);
                     if(fromT && field) { lines.push(`  FOREIGN KEY (${field.name}) REFERENCES ${fromT.name}(id) ON DELETE CASCADE`); }
+                });
+                sql += lines.join(',\n');
+                sql += '\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;';
+                return sql;
+            },
+            sqlPostgreSQL: (table) => {
+                let sql = `CREATE TABLE ${table.name} (\n`;
+                const lines = table.fields.map(f => {
+                    let typeStr = f.type;
+                    if (f.type === 'VARCHAR') typeStr = 'VARCHAR(255)';
+                    if (f.type === 'BIGINT') typeStr = 'BIGINT';
+                    if (f.type === 'foreignId') typeStr = 'BIGINT';
+                    if (f.type === 'TIMESTAMP') typeStr = 'TIMESTAMP';
+                    if (f.type === 'UUID') typeStr = 'UUID';
+                    if (f.type === 'TEXT') typeStr = 'TEXT';
+                    if (f.type === 'BOOLEAN') typeStr = 'BOOLEAN';
+                    if (f.type === 'ENUM' && f.enumValues) {
+                        const vals = f.enumValues.split(',').map(v => v.trim()).join(', ');
+                        typeStr = `VARCHAR(50) CHECK (${f.name} IN (${vals}))`;
+                    }
+                    let line = `  ${f.name} ${typeStr}`;
+                    if (f.isPk && f.type === 'BIGINT') line = `  ${f.name} BIGSERIAL PRIMARY KEY`;
+                    else if (f.isPk) line += ' PRIMARY KEY';
+                    if (!f.isNullable && !f.isPk) line += ' NOT NULL';
+                    return line;
+                });
+                state.relations.filter(r => r.toTableId === table.id).forEach(r => {
+                    const fromT = state.tables.find(t => t.id === r.fromTableId);
+                    const field = table.fields.find(f => f.id === r.fkFieldId);
+                    if(fromT && field) { lines.push(`  CONSTRAINT fk_${table.name}_${field.name} FOREIGN KEY (${field.name}) REFERENCES ${fromT.name}(id) ON DELETE CASCADE`); }
+                });
+                sql += lines.join(',\n');
+                sql += '\n);';
+                return sql;
+            },
+            sqlSQLite: (table) => {
+                let sql = `CREATE TABLE ${table.name} (\n`;
+                const lines = table.fields.map(f => {
+                    let typeStr = f.type;
+                    if (f.type === 'VARCHAR') typeStr = 'TEXT';
+                    if (f.type === 'BIGINT') typeStr = 'INTEGER';
+                    if (f.type === 'foreignId') typeStr = 'INTEGER';
+                    if (f.type === 'TIMESTAMP') typeStr = 'TEXT';
+                    if (f.type === 'UUID') typeStr = 'TEXT';
+                    if (f.type === 'BOOLEAN') typeStr = 'INTEGER';
+                    if (f.type === 'ENUM') typeStr = 'TEXT';
+                    let line = `  ${f.name} ${typeStr}`;
+                    if (f.isPk) line += ' PRIMARY KEY AUTOINCREMENT';
+                    if (!f.isNullable && !f.isPk) line += ' NOT NULL';
+                    return line;
+                });
+                state.relations.filter(r => r.toTableId === table.id).forEach(r => {
+                    const fromT = state.tables.find(t => t.id === r.fromTableId);
+                    const field = table.fields.find(f => f.id === r.fkFieldId);
+                    if(fromT && field) { lines.push(`  FOREIGN KEY (${field.name}) REFERENCES ${fromT.name}(id) ON DELETE CASCADE`); }
+                });
+                sql += lines.join(',\n');
+                sql += '\n);';
+                return sql;
+            },
+            sqlSQLServer: (table) => {
+                let sql = `CREATE TABLE ${table.name} (\n`;
+                const lines = table.fields.map(f => {
+                    let typeStr = f.type;
+                    if (f.type === 'VARCHAR') typeStr = 'NVARCHAR(255)';
+                    if (f.type === 'BIGINT') typeStr = 'BIGINT';
+                    if (f.type === 'foreignId') typeStr = 'BIGINT';
+                    if (f.type === 'TEXT') typeStr = 'NVARCHAR(MAX)';
+                    if (f.type === 'BOOLEAN') typeStr = 'BIT';
+                    if (f.type === 'UUID') typeStr = 'UNIQUEIDENTIFIER';
+                    if (f.type === 'TIMESTAMP') typeStr = 'DATETIME2';
+                    if (f.type === 'ENUM' && f.enumValues) {
+                        const vals = f.enumValues.split(',').map(v => v.trim()).join(', ');
+                        typeStr = `NVARCHAR(50) CHECK (${f.name} IN (${vals}))`;
+                    }
+                    let line = `  ${f.name} ${typeStr}`;
+                    if (f.isPk && f.type === 'BIGINT') line += ' IDENTITY(1,1) PRIMARY KEY';
+                    else if (f.isPk) line += ' PRIMARY KEY';
+                    if (!f.isNullable && !f.isPk) line += ' NOT NULL';
+                    return line;
+                });
+                state.relations.filter(r => r.toTableId === table.id).forEach(r => {
+                    const fromT = state.tables.find(t => t.id === r.fromTableId);
+                    const field = table.fields.find(f => f.id === r.fkFieldId);
+                    if(fromT && field) { lines.push(`  CONSTRAINT FK_${table.name}_${field.name} FOREIGN KEY (${field.name}) REFERENCES ${fromT.name}(id) ON DELETE CASCADE`); }
                 });
                 sql += lines.join(',\n');
                 sql += '\n);';
@@ -767,8 +890,21 @@
                         </div>
                     `;
                 } else if (table.activeTab === 'sql') {
+                    const dialectName = {'mysql': 'MySQL', 'postgresql': 'PostgreSQL', 'sqlite': 'SQLite', 'sqlserver': 'SQL Server'}[state.ui.sqlDialect];
                     contentHtml = `
                         <div class="p-0 bg-slate-50/50">
+                            <div class="px-4 py-2 border-b border-slate-100 bg-white flex items-center justify-between">
+                                <span class="text-xs text-slate-500 font-semibold">Database:</span>
+                                <div class="relative">
+                                    <select onchange="app.changeSqlDialect(this.value)" class="appearance-none bg-slate-100 hover:bg-slate-200 text-xs text-slate-700 font-semibold py-1.5 px-3 pr-8 rounded-md outline-none cursor-pointer transition-colors border border-slate-200">
+                                        <option value="mysql" ${state.ui.sqlDialect === 'mysql' ? 'selected' : ''}>MySQL</option>
+                                        <option value="postgresql" ${state.ui.sqlDialect === 'postgresql' ? 'selected' : ''}>PostgreSQL</option>
+                                        <option value="sqlite" ${state.ui.sqlDialect === 'sqlite' ? 'selected' : ''}>SQLite</option>
+                                        <option value="sqlserver" ${state.ui.sqlDialect === 'sqlserver' ? 'selected' : ''}>SQL Server</option>
+                                    </select>
+                                    <i data-lucide="chevron-down" class="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 pointer-events-none"></i>
+                                </div>
+                            </div>
                             <div class="overflow-auto max-h-48 p-4 custom-scrollbar">
                                 <pre class="code-block text-slate-600 text-xs">${generators.sql(table)}</pre>
                             </div>
@@ -935,6 +1071,7 @@
                 const body = document.getElementById('expand-modal-body');
                 
                 title.textContent = table.name;
+                body.setAttribute('data-table-id', tableId);
                 
                 const baseColor = table.color.split('-')[1];
                 const tableName = app.formatName(table.name);
@@ -1004,9 +1141,20 @@
                         </div>
                         
                         <div class="border-t border-slate-200 pt-6">
-                            <h4 class="text-sm font-bold text-slate-700 uppercase tracking-wide mb-3 flex items-center gap-2">
-                                <i data-lucide="code-2" class="w-4 h-4"></i> SQL Migration
-                            </h4>
+                            <div class="flex items-center justify-between mb-3">
+                                <h4 class="text-sm font-bold text-slate-700 uppercase tracking-wide flex items-center gap-2">
+                                    <i data-lucide="code-2" class="w-4 h-4"></i> SQL Migration
+                                </h4>
+                                <div class="relative">
+                                    <select onchange="app.changeSqlDialect(this.value)" class="appearance-none bg-slate-100 hover:bg-slate-200 text-xs text-slate-700 font-semibold py-1.5 px-3 pr-8 rounded-md outline-none cursor-pointer transition-colors border border-slate-200">
+                                        <option value="mysql" ${state.ui.sqlDialect === 'mysql' ? 'selected' : ''}>MySQL</option>
+                                        <option value="postgresql" ${state.ui.sqlDialect === 'postgresql' ? 'selected' : ''}>PostgreSQL</option>
+                                        <option value="sqlite" ${state.ui.sqlDialect === 'sqlite' ? 'selected' : ''}>SQLite</option>
+                                        <option value="sqlserver" ${state.ui.sqlDialect === 'sqlserver' ? 'selected' : ''}>SQL Server</option>
+                                    </select>
+                                    <i data-lucide="chevron-down" class="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 pointer-events-none"></i>
+                                </div>
+                            </div>
                             <div class="bg-slate-900 rounded-lg p-4 overflow-x-auto">
                                 <pre class="text-xs text-slate-200 font-mono">${generators.sql(table)}</pre>
                             </div>
@@ -1101,7 +1249,42 @@
                 const newTable = { id: app.generateId(), name, x: -state.view.x + 200, y: -state.view.y + 200, color: CONSTANTS.COLORS[state.tables.length % CONSTANTS.COLORS.length], activeTab: 'fields', fields: [ { id: app.generateId(), name: 'id', type: 'BIGINT', isPk: true, isNullable: false } ] };
                 state.tables.push(newTable); app.saveState(); input.value = ''; app.closeModal(); app.renderAll();
             },
-            deleteTable: (id) => { if(!confirm('Delete table?')) return; state.tables = state.tables.filter(t => t.id !== id); state.relations = state.relations.filter(r => r.fromTableId !== id && r.toTableId !== id); app.saveState(); app.renderAll(); },
+            deleteTable: (id) => { 
+                const table = state.tables.find(t => t.id === id);
+                if (!table) return;
+                state.ui.deletingTableId = id;
+                document.getElementById('delete-table-name').textContent = table.name;
+                const backdrop = document.getElementById('delete-table-modal-backdrop');
+                const content = document.getElementById('delete-table-modal-content');
+                backdrop.classList.remove('hidden');
+                setTimeout(() => {
+                    backdrop.classList.remove('opacity-0');
+                    content.classList.remove('scale-95');
+                    content.classList.add('scale-100');
+                    lucide.createIcons({ root: content });
+                }, 10);
+            },
+            closeDeleteTableModal: () => {
+                const backdrop = document.getElementById('delete-table-modal-backdrop');
+                const content = document.getElementById('delete-table-modal-content');
+                backdrop.classList.add('opacity-0');
+                content.classList.remove('scale-100');
+                content.classList.add('scale-95');
+                setTimeout(() => {
+                    backdrop.classList.add('hidden');
+                    state.ui.deletingTableId = null;
+                }, 200);
+            },
+            confirmDeleteTable: () => {
+                const id = state.ui.deletingTableId;
+                if (!id) return;
+                state.tables = state.tables.filter(t => t.id !== id);
+                state.relations = state.relations.filter(r => r.fromTableId !== id && r.toTableId !== id);
+                app.saveState();
+                app.renderAll();
+                app.closeDeleteTableModal();
+                app.showToast('Table deleted');
+            },
             enableRename: (tableId) => { state.ui.renamingTableId = tableId; app.renderTable(state.tables.find(t => t.id === tableId)); },
             finishRename: (tableId, newName) => {
                 if(!newName.trim()) { state.ui.renamingTableId = null; app.renderTable(state.tables.find(t => t.id === tableId)); return; }
@@ -1170,6 +1353,33 @@
                     }
                     // Tree view doesn't have tabs currently
                 } 
+            },
+            changeSqlDialect: (dialect) => {
+                state.ui.sqlDialect = dialect;
+                app.saveState();
+                
+                // Check if expand modal is open and update it
+                const modalBackdrop = document.getElementById('expand-modal-backdrop');
+                if (modalBackdrop && !modalBackdrop.classList.contains('hidden')) {
+                    // Modal is open, get the current table ID from the modal title or body
+                    const modalBody = document.getElementById('expand-modal-body');
+                    if (modalBody) {
+                        // Find which table's data is being displayed by checking for a data attribute we can add
+                        const tableId = modalBody.getAttribute('data-table-id');
+                        if (tableId) {
+                            app.openExpandModal(tableId);
+                        }
+                    }
+                }
+                
+                // Re-render based on active view
+                if (state.ui.activeView === 'board') {
+                    app.renderAll();
+                } else if (state.ui.activeView === 'list') {
+                    app.renderListView();
+                } else if (state.ui.activeView === 'tree') {
+                    app.renderTreeView();
+                }
             },
             toggleRelationType: (relationId) => { const relation = state.relations.find(r => r.id === relationId); if (relation) { relation.type = relation.type === '1:n' ? '1:1' : '1:n'; app.saveState(); app.drawConnections(); } },
             highlightRelation: (relationId, isHover) => {
@@ -1374,7 +1584,7 @@
                     }).join('');
                     contentHtml = `<div class="flex flex-col py-1 bg-white min-h-[50px] rounded-b-xl" ondragover="app.dragFieldOver(event)" ondrop="app.dropFieldOnContainer(event, '${table.id}')"> ${fieldsHtml} <div class="px-2 pt-2 pb-2"> <button onclick="app.addField('${table.id}')" class="w-full flex items-center justify-center gap-2 text-xs font-semibold text-slate-400 hover:text-${baseColor}-600 hover:bg-${baseColor}-50 p-2 rounded-lg transition-all border border-dashed border-slate-200 hover:border-${baseColor}-200"> <i data-lucide="plus" class="w-3.5 h-3.5"></i> <span>Add Field</span> </button> </div> </div>`;
                 } else if (table.activeTab === 'sql') {
-                    contentHtml = `<div class="p-0 bg-slate-50/50 rounded-b-xl overflow-hidden h-full flex flex-col"> <div class="overflow-auto max-h-64 p-3 custom-scrollbar"> <pre class="code-block text-slate-600 text-xs">${generators.sql(table)}</pre> </div> <div class="p-2 border-t border-slate-100 bg-white"> <button onclick="app.copyToClipboard(generators.sql(state.tables.find(t=>t.id=='${table.id}')))" class="w-full flex items-center justify-center gap-2 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-600 py-2 rounded-lg transition-colors"> <i data-lucide="copy" class="w-3 h-3"></i> Copy SQL </button> </div> </div>`;
+                    contentHtml = `<div class="p-0 bg-slate-50/50 rounded-b-xl overflow-hidden h-full flex flex-col"> <div class="px-2 pt-2 pb-1 border-b border-slate-100 bg-white flex items-center justify-between"> <span class="text-[10px] text-slate-500 font-semibold">Database:</span> <div class="relative"> <select onchange="app.changeSqlDialect(this.value)" class="appearance-none bg-slate-100 hover:bg-slate-200 text-[10px] text-slate-700 font-semibold py-1 px-2 pr-6 rounded-md outline-none cursor-pointer transition-colors border border-slate-200"> <option value="mysql" ${state.ui.sqlDialect === 'mysql' ? 'selected' : ''}>MySQL</option> <option value="postgresql" ${state.ui.sqlDialect === 'postgresql' ? 'selected' : ''}>PostgreSQL</option> <option value="sqlite" ${state.ui.sqlDialect === 'sqlite' ? 'selected' : ''}>SQLite</option> <option value="sqlserver" ${state.ui.sqlDialect === 'sqlserver' ? 'selected' : ''}>SQL Server</option> </select> <i data-lucide="chevron-down" class="absolute right-1 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 pointer-events-none"></i> </div> </div> <div class="overflow-auto max-h-64 p-3 custom-scrollbar"> <pre class="code-block text-slate-600 text-xs">${generators.sql(table)}</pre> </div> <div class="p-2 border-t border-slate-100 bg-white"> <button onclick="app.copyToClipboard(generators.sql(state.tables.find(t=>t.id=='${table.id}')))" class="w-full flex items-center justify-center gap-2 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-600 py-2 rounded-lg transition-colors"> <i data-lucide="copy" class="w-3 h-3"></i> Copy SQL </button> </div> </div>`;
                 } else if (table.activeTab === 'laravel') {
                     contentHtml = `<div class="p-0 bg-slate-50/50 rounded-b-xl overflow-hidden h-full flex flex-col"> <div class="overflow-auto max-h-64 p-3 custom-scrollbar"> <pre class="code-block text-indigo-600 text-xs">${generators.laravel(table)}</pre> </div> <div class="p-2 border-t border-slate-100 bg-white"> <button onclick="app.copyToClipboard(generators.laravel(state.tables.find(t=>t.id=='${table.id}')))" class="w-full flex items-center justify-center gap-2 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-600 py-2 rounded-lg transition-colors"> <i data-lucide="copy" class="w-3 h-3"></i> Copy Migration </button> </div> </div>`;
                 }
