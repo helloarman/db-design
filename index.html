@@ -55,10 +55,29 @@
             border: 2px dashed #94a3b8;
         }
 
+        .table-card {
+            will-change: transform;
+        }
+
+        .dragging-table {
+            transition: none !important;
+            will-change: transform;
+        }
+
         /* Connection Animation */
         .connection-line {
             stroke-dasharray: 10, 5;
             animation: flow 60s linear infinite; /* Very slow flow */
+            transition: stroke 0.2s ease;
+        }
+        .connection-line:hover,
+        .connection-line.connection-line-hover {
+            stroke: #6366f1 !important;
+            stroke-width: 3;
+        }
+        .connection-line.selected {
+            stroke: #6366f1 !important;
+            stroke-width: 3;
         }
         .connection-line-active {
             stroke-dasharray: 8, 4;
@@ -74,11 +93,22 @@
         /* Badge Styles */
         .relation-badge {
             cursor: pointer;
-            transition: transform 0.1s;
+            transition: all 0.2s ease;
         }
         .relation-badge:hover {
             transform: scale(1.1);
             z-index: 50;
+        }
+        .relation-badge.badge-hover {
+            background-color: #6366f1 !important;
+            color: white !important;
+            border-color: #6366f1 !important;
+        }
+        .relation-badge.badge-selected {
+            background-color: #6366f1 !important;
+            color: white !important;
+            border-color: #4f46e5 !important;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
         }
     </style>
 </head>
@@ -175,10 +205,10 @@
             <!-- SVG Layer for connections -->
             <svg id="connections-layer" class="absolute top-0 left-0 overflow-visible" style="width: 10000px; height: 10000px; z-index: 0; pointer-events: none;">
                 <defs>
-                    <marker id="marker-one" markerWidth="12" markerHeight="12" refX="0" refY="6" orient="auto"><path d="M0,0 L0,12 M4,6" stroke="#94a3b8" stroke-width="2" fill="none"/></marker>
-                    <marker id="marker-many" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M0,6 L10,6 M10,6 L0,0 M10,6 L0,12" stroke="#94a3b8" stroke-width="2" fill="none"/></marker>
-                    <marker id="marker-one-end" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M10,0 L10,12 M0,6 L10,6" stroke="#94a3b8" stroke-width="2" fill="none"/></marker>
-                    <marker id="marker-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10" fill="#6366f1" /></marker>
+                    <marker id="marker-one" markerWidth="10" markerHeight="10" refX="0" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,10 M0,5 L3,5" stroke="#94a3b8" stroke-width="1.5" fill="none" stroke-linecap="round"/></marker>
+                    <marker id="marker-many" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M0,5 L8,5 M8,0 L0,5 L8,10" stroke="#94a3b8" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></marker>
+                    <marker id="marker-one-end" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M8,0 L8,10 M0,5 L8,5" stroke="#94a3b8" stroke-width="1.5" fill="none" stroke-linecap="round"/></marker>
+                    <marker id="marker-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L8,4 L0,8 L2,4 Z" fill="#6366f1" /></marker>
                 </defs>
             </svg>
             <!-- Nodes Layer -->
@@ -275,7 +305,9 @@
                 mousePos: { x: 0, y: 0 },
                 renamingTableId: null,
                 activeView: 'board', // 'board' | 'list' | 'tree'
-                expandedNodes: new Set() // stores paths like "rootId/childId"
+                expandedNodes: new Set(), // stores paths like "rootId/childId"
+                animationFrameId: null,
+                selectedRelation: null
             }
         };
 
@@ -870,13 +902,32 @@
                 } 
             },
             toggleRelationType: (relationId) => { const relation = state.relations.find(r => r.id === relationId); if (relation) { relation.type = relation.type === '1:n' ? '1:1' : '1:n'; app.saveState(); app.drawConnections(); } },
+            highlightRelation: (relationId, isHover) => {
+                const badge = document.querySelector(`[data-badge-relation-id="${relationId}"]`);
+                const path = document.querySelector(`path[data-relation-id="${relationId}"]`);
+                if (isHover) {
+                    if (badge && !badge.classList.contains('badge-selected')) badge.classList.add('badge-hover');
+                    if (path && !path.classList.contains('selected')) path.classList.add('connection-line-hover');
+                } else {
+                    if (badge) badge.classList.remove('badge-hover');
+                    if (path) path.classList.remove('connection-line-hover');
+                }
+            },
+            selectRelation: (relationId) => {
+                if (state.ui.selectedRelation === relationId) {
+                    state.ui.selectedRelation = null;
+                } else {
+                    state.ui.selectedRelation = relationId;
+                }
+                app.drawConnections();
+            },
             deleteRelation: (relId) => {
                 if(!confirm('Remove relation?')) return; const rel = state.relations.find(r => r.id === relId);
                 if (rel) { const table = state.tables.find(t => t.id === rel.toTableId); if (table) { const field = table.fields.find(f => f.id === rel.fkFieldId); if (field) { field.isFk = false; app.renderTable(table); } } }
                 state.relations = state.relations.filter(r => r.id !== relId); app.saveState(); app.drawConnections(); app.updateStats();
             },
             autoLayout: () => {
-                const spacingX = 420; const spacingY = 50;
+                const spacingX = 420; const spacingY = 80;
                 const getTableHeight = (t) => 100 + (t.fields.length * 35);
                 const adj = {}; const revAdj = {};
                 state.tables.forEach(t => { adj[t.id] = []; revAdj[t.id] = []; });
@@ -976,7 +1027,7 @@
             },
             drawConnections: () => {
                 const svg = document.getElementById('connections-layer'); const labelsLayer = document.getElementById('labels-layer');
-                let svgHtml = `<defs> <marker id="marker-one" markerWidth="12" markerHeight="12" refX="0" refY="6" orient="auto"><path d="M0,0 L0,12 M4,6" stroke="#94a3b8" stroke-width="2" fill="none"/></marker> <marker id="marker-many" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M0,6 L10,6 M10,6 L0,0 M10,6 L0,12" stroke="#94a3b8" stroke-width="2" fill="none"/></marker> <marker id="marker-one-end" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M10,0 L10,12 M0,6 L10,6" stroke="#94a3b8" stroke-width="2" fill="none"/></marker> <marker id="marker-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10" fill="#6366f1" /></marker> </defs>`;
+                let svgHtml = `<defs> <marker id="marker-one" markerWidth="10" markerHeight="10" refX="0" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,10 M0,5 L3,5" stroke="#94a3b8" stroke-width="1.5" fill="none" stroke-linecap="round"/></marker> <marker id="marker-many" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M0,5 L8,5 M8,0 L0,5 L8,10" stroke="#94a3b8" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></marker> <marker id="marker-one-end" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M8,0 L8,10 M0,5 L8,5" stroke="#94a3b8" stroke-width="1.5" fill="none" stroke-linecap="round"/></marker> <marker id="marker-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L8,4 L0,8 L2,4 Z" fill="#6366f1" /></marker> </defs>`;
                 let labelsHtml = '';
                 state.relations.forEach(rel => {
                     const fromT = state.tables.find(t => t.id === rel.fromTableId); const toT = state.tables.find(t => t.id === rel.toTableId);
@@ -987,17 +1038,23 @@
                         const start = app.getAnchorPoint(fromT.id, pkField?.id, startSide); const end = app.getAnchorPoint(toT.id, rel.fkFieldId, endSide);
                         const pathD = app.calculateSmartPath(start.x, start.y, startSide, end.x, end.y, endSide);
                         const markerStart = "url(#marker-one)"; const markerEnd = rel.type === '1:1' ? "url(#marker-one-end)" : "url(#marker-many)";
-                        svgHtml += `<path d="${pathD}" stroke="#94a3b8" stroke-width="2" fill="none" class="connection-line" marker-start="${markerStart}" marker-end="${markerEnd}" />`;
+                        const relationTooltip = `${fromT.name} → ${toT.name}`;
+                        const isSelected = state.ui.selectedRelation === rel.id;
+                        const selectedClass = isSelected ? ' selected' : '';
+                        svgHtml += `<path data-relation-id="${rel.id}" d="${pathD}" stroke="#94a3b8" stroke-width="2" fill="none" class="connection-line${selectedClass}" marker-start="${markerStart}" marker-end="${markerEnd}" style="pointer-events: stroke; cursor: pointer;" onclick="app.selectRelation('${rel.id}')" onmouseover="app.highlightRelation('${rel.id}', true)" onmouseout="app.highlightRelation('${rel.id}', false)"><title>${relationTooltip}</title></path>`;
                         const stub = 20; const sx1 = startSide === 'right' ? start.x + stub : start.x - stub; const sx2 = endSide === 'right' ? end.x + stub : end.x - stub;
                         const dx = Math.abs(sx2 - sx1); const controlX = Math.max(dx * 0.5, 60); const cx1 = startSide === 'right' ? sx1 + controlX : sx1 - controlX; const cx2 = endSide === 'right' ? sx2 + controlX : sx2 - controlX;
                         const mid = app.calculateBezierMidpoint(sx1, start.y, cx1, start.y, cx2, end.y, sx2, end.y); const badgeColor = rel.type === '1:1' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-blue-100 text-blue-700 border-blue-200';
-                        labelsHtml += `<div class="relation-badge absolute flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full border shadow-sm ${badgeColor} select-none pointer-events-auto" style="left: ${mid.x}px; top: ${mid.y}px; transform: translate(-50%, -50%);"> <span onclick="app.toggleRelationType('${rel.id}')" title="Toggle Type">${rel.type === '1:1' ? '1:1' : '1:N'}</span> <span onclick="app.deleteRelation('${rel.id}')" class="hover:text-red-600 cursor-pointer" title="Remove Relation">&times;</span> </div>`;
+                        const badgeSelectedClass = isSelected ? ' badge-selected' : '';
+                        labelsHtml += `<div data-badge-relation-id="${rel.id}" class="relation-badge absolute flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full border shadow-sm ${badgeColor}${badgeSelectedClass} select-none pointer-events-auto" style="left: ${mid.x}px; top: ${mid.y}px; transform: translate(-50%, -50%);" onmouseover="app.highlightRelation('${rel.id}', true)" onmouseout="app.highlightRelation('${rel.id}', false)"> <span onclick="app.toggleRelationType('${rel.id}')" title="Toggle Type">${rel.type === '1:1' ? '1:1' : '1:N'}</span> <span onclick="app.deleteRelation('${rel.id}')" class="hover:text-red-600 cursor-pointer" title="Remove Relation">&times;</span> </div>`;
                     }
                 });
                 if (state.ui.connectingFrom) {
                     const fromT = state.tables.find(t => t.id === state.ui.connectingFrom);
                     if (fromT) {
-                        const pathD = `M ${fromT.x + 280} ${fromT.y + 20} L ${state.ui.mousePos.x} ${state.ui.mousePos.y}`;
+                        const pkField = fromT.fields.find(f => f.isPk);
+                        const start = app.getAnchorPoint(fromT.id, pkField?.id, 'right');
+                        const pathD = `M ${start.x} ${start.y} L ${state.ui.mousePos.x} ${state.ui.mousePos.y}`;
                         svgHtml += `<path d="${pathD}" stroke="#6366f1" stroke-width="2" fill="none" class="connection-line-active" marker-end="url(#marker-arrow)" />`;
                     }
                 }
@@ -1008,10 +1065,14 @@
                 state.tables.forEach(table => {
                     const div = document.createElement('div'); div.id = table.id;
                     div.className = `table-card absolute flex flex-col w-72 bg-white rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-slate-200 transition-all hover:shadow-[0_20px_40px_rgb(0,0,0,0.2)] hover:-translate-y-1`;
-                    div.style.left = `${table.x}px`; div.style.top = `${table.y}px`;
+                    div.style.transform = `translate(${table.x}px, ${table.y}px)`;
                     layer.appendChild(div); app.renderTable(table);
                 });
-                app.updateStats(); app.drawConnections();
+                app.updateStats();
+                // Defer drawConnections to ensure DOM is fully rendered
+                requestAnimationFrame(() => {
+                    app.drawConnections();
+                });
             },
             renderTable: (table) => {
                 const el = document.getElementById(table.id); if (!el) return;
@@ -1054,17 +1115,73 @@
                     else app.renderListCard(table);
                 }
             },
-            startDragTable: (e, id) => { if(e.target.closest('button') || e.target.closest('input') || e.target.closest('select')) return; e.preventDefault(); e.stopPropagation(); const table = state.tables.find(t => t.id === id); state.ui.draggingTable = { id: id, offsetX: e.clientX - (table.x * state.view.scale) - state.view.x, offsetY: e.clientY - (table.y * state.view.scale) - state.view.y }; },
+            updateTablePosition: (tId, newX, newY) => {
+                const el = document.getElementById(tId);
+                if(el) {
+                    el.style.transform = `translate(${newX}px, ${newY}px)`;
+                }
+            },
+            startDragTable: (e, id) => { if(e.target.closest('button') || e.target.closest('input') || e.target.closest('select')) return; e.preventDefault(); e.stopPropagation(); const table = state.tables.find(t => t.id === id); const el = document.getElementById(id); if(el) el.classList.add('dragging-table'); state.ui.draggingTable = { id: id, offsetX: e.clientX - (table.x * state.view.scale) - state.view.x, offsetY: e.clientY - (table.y * state.view.scale) - state.view.y }; },
             attachListeners: () => {
                 const canvas = document.getElementById('canvas-container');
+                let lastMouseEvent = null;
+
                 canvas.addEventListener('mousedown', (e) => { if (e.target === canvas || e.target.id === 'connections-layer' || e.target.id === 'nodes-layer' || e.target.id === 'labels-layer') { state.ui.isDraggingCanvas = true; state.ui.dragStart = { x: e.clientX - state.view.x, y: e.clientY - state.view.y }; canvas.style.cursor = 'grabbing'; } });
+                
+                const handleMouseMove = () => {
+                    if (!lastMouseEvent) return;
+                    const e = lastMouseEvent;
+                    const rect = canvas.getBoundingClientRect();
+                    state.ui.mousePos = { x: (e.clientX - rect.left - state.view.x) / state.view.scale, y: (e.clientY - rect.top - state.view.y) / state.view.scale };
+                    
+                    if (state.ui.isDraggingCanvas) {
+                        state.view.x = e.clientX - state.ui.dragStart.x;
+                        state.view.y = e.clientY - state.ui.dragStart.y;
+                        app.updateCanvasTransform();
+                    }
+                    
+                    if (state.ui.draggingTable) {
+                        const tId = state.ui.draggingTable.id;
+                        const table = state.tables.find(t => t.id === tId);
+                        table.x = (e.clientX - state.ui.draggingTable.offsetX - state.view.x) / state.view.scale;
+                        table.y = (e.clientY - state.ui.draggingTable.offsetY - state.view.y) / state.view.scale;
+                        app.updateTablePosition(tId, table.x, table.y);
+                        app.drawConnections();
+                    }
+                    
+                    if (state.ui.connectingFrom) {
+                        app.drawConnections();
+                    }
+                    
+                    lastMouseEvent = null;
+                    state.ui.animationFrameId = null;
+                };
+
                 window.addEventListener('mousemove', (e) => {
-                    const rect = canvas.getBoundingClientRect(); state.ui.mousePos = { x: (e.clientX - rect.left - state.view.x) / state.view.scale, y: (e.clientY - rect.top - state.view.y) / state.view.scale };
-                    if (state.ui.isDraggingCanvas) { state.view.x = e.clientX - state.ui.dragStart.x; state.view.y = e.clientY - state.ui.dragStart.y; app.updateCanvasTransform(); }
-                    if (state.ui.draggingTable) { const tId = state.ui.draggingTable.id; const table = state.tables.find(t => t.id === tId); table.x = (e.clientX - state.ui.draggingTable.offsetX - state.view.x) / state.view.scale; table.y = (e.clientY - state.ui.draggingTable.offsetY - state.view.y) / state.view.scale; const el = document.getElementById(tId); if(el) { el.style.left = `${table.x}px`; el.style.top = `${table.y}px`; } app.drawConnections(); }
-                    if (state.ui.connectingFrom) { app.drawConnections(); }
+                    lastMouseEvent = e;
+                    if (!state.ui.animationFrameId && (state.ui.isDraggingCanvas || state.ui.draggingTable || state.ui.connectingFrom)) {
+                        state.ui.animationFrameId = requestAnimationFrame(handleMouseMove);
+                    }
                 });
-                window.addEventListener('mouseup', () => { if (state.ui.isDraggingCanvas) { app.saveState(); } if (state.ui.draggingTable) { app.saveState(); } state.ui.isDraggingCanvas = false; state.ui.draggingTable = null; canvas.style.cursor = 'grab'; if (state.ui.connectingFrom) { app.cancelConnection(); } });
+                
+                window.addEventListener('mouseup', () => {
+                    if (state.ui.isDraggingCanvas) { app.saveState(); }
+                    if (state.ui.draggingTable) {
+                        const el = document.getElementById(state.ui.draggingTable.id);
+                        if(el) el.classList.remove('dragging-table');
+                        app.saveState();
+                    }
+                    state.ui.isDraggingCanvas = false;
+                    state.ui.draggingTable = null;
+                    canvas.style.cursor = 'grab';
+                    if (state.ui.connectingFrom) { app.cancelConnection(); }
+                    if (state.ui.animationFrameId) {
+                        cancelAnimationFrame(state.ui.animationFrameId);
+                        state.ui.animationFrameId = null;
+                    }
+                    lastMouseEvent = null;
+                });
+                
                 canvas.addEventListener('wheel', (e) => { if (e.ctrlKey || e.metaKey) { e.preventDefault(); const s = e.deltaY > 0 ? 0.9 : 1.1; state.view.scale = Math.min(Math.max(0.2, state.view.scale * s), 3); app.updateCanvasTransform(); app.saveState(); } }, { passive: false });
             }
         };
