@@ -389,6 +389,49 @@
                 });
                 php += `});`;
                 return php;
+            },
+            relations: (table) => {
+                const singularName = app.getSingular(table.name);
+                const modelName = singularName.split(/[\s_]+/).map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join('');
+                
+                // Find relationships where this table is the parent (hasMany/hasOne)
+                const childRels = state.relations.filter(r => r.fromTableId === table.id);
+                
+                // Find relationships where this table is the child (belongsTo)
+                const parentRels = state.relations.filter(r => r.toTableId === table.id);
+                
+                let php = '';
+                
+                // BelongsTo relationships (this table has foreign keys)
+                parentRels.forEach(rel => {
+                    const parentTable = state.tables.find(t => t.id === rel.fromTableId);
+                    if (!parentTable) return;
+                    
+                    const parentSingular = app.getSingular(parentTable.name);
+                    const parentModelName = parentSingular.split(/[\s_]+/).map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join('');
+                    const methodName = parentSingular.split(/[\s_]+/).map((word, i) => i === 0 ? word.toLowerCase() : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join('');
+                    
+                    php += `public function ${methodName}()\n{\n    return $this->belongsTo(${parentModelName}::class);\n}\n\n`;
+                });
+                
+                // HasMany/HasOne relationships (other tables reference this table)
+                childRels.forEach(rel => {
+                    const childTable = state.tables.find(t => t.id === rel.toTableId);
+                    if (!childTable) return;
+                    
+                    const childSingular = app.getSingular(childTable.name);
+                    const childModelName = childSingular.split(/[\s_]+/).map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join('');
+                    
+                    if (rel.type === '1:1') {
+                        const methodName = childSingular.split(/[\s_]+/).map((word, i) => i === 0 ? word.toLowerCase() : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join('');
+                        php += `public function ${methodName}()\n{\n    return $this->hasOne(${childModelName}::class);\n}\n\n`;
+                    } else {
+                        const methodName = childTable.name.split(/[\s_]+/).map((word, i) => i === 0 ? word.toLowerCase() : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join('');
+                        php += `public function ${methodName}()\n{\n    return $this->hasMany(${childModelName}::class);\n}\n\n`;
+                    }
+                });
+                
+                return php.trim() || '// No relationships defined';
             }
         };
 
@@ -723,15 +766,59 @@
                         </div>
                     `;
                 } else if (table.activeTab === 'laravel') {
+                    const tableName = app.formatName(table.name);
+                    const migrationCmd = `php artisan make:migration create_${tableName}_table`;
+                    const singularName = app.getSingular(table.name);
+                    const modelName = singularName.split(/[\s_]+/).map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join('');
+                    const modelCmd = `php artisan make:model ${modelName} -m`;
+                    const relationsMethods = generators.relations(table);
                     contentHtml = `
                         <div class="p-0 bg-slate-50/50">
-                            <div class="overflow-auto max-h-48 p-4 custom-scrollbar">
-                                <pre class="code-block text-indigo-600 text-xs">${generators.laravel(table)}</pre>
+                            <div class="space-y-3">
+                                <div class="border-b border-slate-200 bg-white">
+                                    <div class="px-4 py-2 bg-slate-100/50">
+                                        <div class="text-[10px] text-slate-500 font-bold uppercase tracking-wide">Migration</div>
+                                    </div>
+                                    <div class="overflow-auto max-h-40 p-4 custom-scrollbar">
+                                        <pre class="code-block text-indigo-600 text-xs">${generators.laravel(table)}</pre>
+                                    </div>
+                                </div>
+                                <div class="border-b border-slate-200 bg-white">
+                                    <div class="px-4 py-2 bg-slate-100/50">
+                                        <div class="text-[10px] text-slate-500 font-bold uppercase tracking-wide">Model Relationships</div>
+                                    </div>
+                                    <div class="overflow-auto max-h-40 p-4 custom-scrollbar">
+                                        <pre class="code-block text-emerald-600 text-xs">${relationsMethods}</pre>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="px-4 py-2 border-t border-slate-100 bg-white flex justify-end">
-                                <button onclick="app.copyToClipboard(generators.laravel(state.tables.find(t=>t.id=='${table.id}')))" class="flex items-center justify-center gap-2 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded transition-colors">
-                                    <i data-lucide="copy" class="w-3 h-3"></i> Copy Migration
-                                </button>
+                            <div class="px-4 py-3 space-y-2 border-t border-slate-100 bg-white">
+                                <div class="flex items-center gap-2">
+                                    <div class="flex-1 bg-slate-50 border border-slate-200 rounded px-2 py-1.5">
+                                        <div class="text-[9px] text-slate-400 font-semibold uppercase tracking-wide mb-0.5">Migration Command</div>
+                                        <code class="text-[11px] text-slate-700 font-mono block select-all">${migrationCmd}</code>
+                                    </div>
+                                    <button onclick="app.copyToClipboard('${migrationCmd}')" class="flex items-center justify-center gap-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-600 px-2.5 py-1.5 rounded transition-colors shrink-0">
+                                        <i data-lucide="copy" class="w-3 h-3"></i>
+                                    </button>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <div class="flex-1 bg-slate-50 border border-slate-200 rounded px-2 py-1.5">
+                                        <div class="text-[9px] text-slate-400 font-semibold uppercase tracking-wide mb-0.5">Model Command</div>
+                                        <code class="text-[11px] text-slate-700 font-mono block select-all">${modelCmd}</code>
+                                    </div>
+                                    <button onclick="app.copyToClipboard('${modelCmd}')" class="flex items-center justify-center gap-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-600 px-2.5 py-1.5 rounded transition-colors shrink-0">
+                                        <i data-lucide="copy" class="w-3 h-3"></i>
+                                    </button>
+                                </div>
+                                <div class="pt-1 border-t border-slate-100 flex gap-2">
+                                    <button onclick="app.copyToClipboard(generators.laravel(state.tables.find(t=>t.id=='${table.id}')))" class="flex-1 flex items-center justify-center gap-2 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded transition-colors">
+                                        <i data-lucide="copy" class="w-3 h-3"></i> Copy Migration
+                                    </button>
+                                    <button onclick="app.copyToClipboard(generators.relations(state.tables.find(t=>t.id=='${table.id}')))" class="flex-1 flex items-center justify-center gap-2 text-xs font-semibold bg-emerald-100 hover:bg-emerald-200 text-emerald-700 px-3 py-1.5 rounded transition-colors">
+                                        <i data-lucide="copy" class="w-3 h-3"></i> Copy Relations
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     `;
@@ -928,8 +1015,15 @@
                 state.relations = state.relations.filter(r => r.id !== relId); app.saveState(); app.drawConnections(); app.updateStats();
             },
             autoLayout: () => {
-                const spacingX = 420; const spacingY = 80;
-                const getTableHeight = (t) => 100 + (t.fields.length * 35);
+                const spacingX = 480; const spacingY = 120;
+                const getTableHeight = (t) => {
+                    const headerHeight = 52;
+                    const tabsHeight = 44;
+                    const fieldHeight = 42;
+                    const footerHeight = 56;
+                    const enumPadding = t.fields.some(f => f.type === 'ENUM' && f.enumValues) ? 40 : 0;
+                    return headerHeight + tabsHeight + (t.fields.length * fieldHeight) + footerHeight + enumPadding + 20;
+                };
                 const adj = {}; const revAdj = {};
                 state.tables.forEach(t => { adj[t.id] = []; revAdj[t.id] = []; });
                 state.relations.forEach(r => { if(adj[r.fromTableId]) adj[r.fromTableId].push(r.toTableId); if(revAdj[r.toTableId]) revAdj[r.toTableId].push(r.fromTableId); });
