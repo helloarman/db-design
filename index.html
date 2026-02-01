@@ -279,6 +279,20 @@
         </div>
     </div>
 
+    <div id="expand-modal-backdrop" class="hidden fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center transition-opacity opacity-0" onclick="if(event.target === this) app.closeExpandModal()">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden transform scale-95 transition-transform" id="expand-modal-content">
+            <div class="flex items-center justify-between p-4 border-b border-slate-200 bg-slate-50">
+                <h3 class="text-lg font-bold text-slate-800" id="expand-modal-title">Table Details</h3>
+                <button onclick="app.closeExpandModal()" class="p-2 rounded-lg hover:bg-slate-200 text-slate-500 hover:text-slate-700 transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="overflow-auto max-h-[calc(90vh-80px)]" id="expand-modal-body">
+                <!-- Content will be dynamically inserted here -->
+            </div>
+        </div>
+    </div>
+
     <!-- Javascript Application -->
     <script>
         const CONSTANTS = {
@@ -911,6 +925,174 @@
                 const backdrop = document.getElementById('clear-modal-backdrop'); const content = document.getElementById('clear-modal-content');
                 backdrop.classList.add('opacity-0'); content.classList.remove('scale-100'); content.classList.add('scale-95'); setTimeout(() => { backdrop.classList.add('hidden'); }, 200);
             },
+            openExpandModal: (tableId) => {
+                const table = state.tables.find(t => t.id === tableId);
+                if (!table) return;
+                
+                const backdrop = document.getElementById('expand-modal-backdrop');
+                const content = document.getElementById('expand-modal-content');
+                const title = document.getElementById('expand-modal-title');
+                const body = document.getElementById('expand-modal-body');
+                
+                title.textContent = table.name;
+                
+                const baseColor = table.color.split('-')[1];
+                const tableName = app.formatName(table.name);
+                const migrationCmd = `php artisan make:migration create_${tableName}_table`;
+                const singularName = app.getSingular(table.name);
+                const modelName = singularName.split(/[\s_]+/).map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join('');
+                const modelCmd = `php artisan make:model ${modelName} -m`;
+                const relationsMethods = generators.relations(table);
+                
+                const parentRels = state.relations.filter(r => r.toTableId === table.id);
+                const childRels = state.relations.filter(r => r.fromTableId === table.id);
+                
+                body.innerHTML = `
+                    <div class="p-6 space-y-6">
+                        <div class="grid grid-cols-2 gap-6">
+                            <div>
+                                <h4 class="text-sm font-bold text-slate-700 uppercase tracking-wide mb-3 flex items-center gap-2">
+                                    <i data-lucide="list" class="w-4 h-4"></i> Fields
+                                </h4>
+                                <div class="space-y-2">
+                                    ${table.fields.map(f => {
+                                        let icon = '';
+                                        if(f.isPk) icon = '<i data-lucide="key" class="w-3.5 h-3.5 text-amber-500 mr-2"></i>';
+                                        else if(f.isFk) icon = '<i data-lucide="link-2" class="w-3.5 h-3.5 text-blue-500 mr-2"></i>';
+                                        else icon = '<div class="w-3.5 h-3.5 mr-2"></div>';
+                                        
+                                        return `
+                                            <div class="flex items-center gap-2 p-2 bg-slate-50 rounded border border-slate-200">
+                                                ${icon}
+                                                <span class="font-mono text-sm font-medium text-slate-700 flex-1">${f.name}</span>
+                                                <span class="text-xs px-2 py-0.5 rounded bg-slate-200 text-slate-600 font-bold">${f.type}</span>
+                                                ${f.isNullable ? '<span class="text-xs px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-600 font-bold">NULL</span>' : ''}
+                                            </div>
+                                        `;
+                                    }).join('')}
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <h4 class="text-sm font-bold text-slate-700 uppercase tracking-wide mb-3 flex items-center gap-2">
+                                    <i data-lucide="git-branch" class="w-4 h-4"></i> Relationships
+                                </h4>
+                                <div class="space-y-3">
+                                    ${parentRels.length > 0 ? `
+                                        <div>
+                                            <div class="text-xs text-slate-500 font-semibold mb-1.5">Belongs To:</div>
+                                            ${parentRels.map(r => {
+                                                const parent = state.tables.find(t => t.id === r.fromTableId);
+                                                return parent ? `<div class="text-sm px-3 py-1.5 bg-blue-50 border border-blue-200 rounded text-blue-700 font-medium">${parent.name}</div>` : '';
+                                            }).join('')}
+                                        </div>
+                                    ` : ''}
+                                    
+                                    ${childRels.length > 0 ? `
+                                        <div>
+                                            <div class="text-xs text-slate-500 font-semibold mb-1.5">Has ${childRels.some(r => r.type === '1:1') ? 'One' : 'Many'}:</div>
+                                            ${childRels.map(r => {
+                                                const child = state.tables.find(t => t.id === r.toTableId);
+                                                return child ? `<div class="text-sm px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded text-emerald-700 font-medium">${child.name}</div>` : '';
+                                            }).join('')}
+                                        </div>
+                                    ` : ''}
+                                    
+                                    ${parentRels.length === 0 && childRels.length === 0 ? '<div class="text-sm text-slate-400 italic">No relationships</div>' : ''}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="border-t border-slate-200 pt-6">
+                            <h4 class="text-sm font-bold text-slate-700 uppercase tracking-wide mb-3 flex items-center gap-2">
+                                <i data-lucide="code-2" class="w-4 h-4"></i> SQL Migration
+                            </h4>
+                            <div class="bg-slate-900 rounded-lg p-4 overflow-x-auto">
+                                <pre class="text-xs text-slate-200 font-mono">${generators.sql(table)}</pre>
+                            </div>
+                            <div class="mt-3 flex justify-end">
+                                <button onclick="app.copyToClipboard(generators.sql(state.tables.find(t=>t.id=='${table.id}')))" class="flex items-center gap-2 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded transition-colors">
+                                    <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy SQL
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="border-t border-slate-200 pt-6">
+                            <h4 class="text-sm font-bold text-slate-700 uppercase tracking-wide mb-3 flex items-center gap-2">
+                                <i data-lucide="terminal" class="w-4 h-4"></i> Laravel
+                            </h4>
+                            
+                            <div class="space-y-4">
+                                <div>
+                                    <div class="text-xs text-slate-500 font-semibold mb-2">Commands</div>
+                                    <div class="space-y-2">
+                                        <div class="flex items-center gap-2">
+                                            <div class="flex-1 bg-slate-50 border border-slate-200 rounded px-3 py-2">
+                                                <code class="text-xs text-slate-700 font-mono block">${migrationCmd}</code>
+                                            </div>
+                                            <button onclick="app.copyToClipboard('${migrationCmd}')" class="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded transition-colors">
+                                                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                                            </button>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <div class="flex-1 bg-slate-50 border border-slate-200 rounded px-3 py-2">
+                                                <code class="text-xs text-slate-700 font-mono block">${modelCmd}</code>
+                                            </div>
+                                            <button onclick="app.copyToClipboard('${modelCmd}')" class="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded transition-colors">
+                                                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <div class="text-xs text-slate-500 font-semibold mb-2">Migration Code</div>
+                                    <div class="bg-indigo-950 rounded-lg p-4 overflow-x-auto">
+                                        <pre class="text-xs text-indigo-200 font-mono">${generators.laravel(table)}</pre>
+                                    </div>
+                                    <div class="mt-2 flex justify-end">
+                                        <button onclick="app.copyToClipboard(generators.laravel(state.tables.find(t=>t.id=='${table.id}')))" class="flex items-center gap-2 text-xs font-semibold bg-indigo-100 hover:bg-indigo-200 text-indigo-700 px-3 py-2 rounded transition-colors">
+                                            <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy Migration
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                ${relationsMethods !== '// No relationships defined' ? `
+                                <div>
+                                    <div class="text-xs text-slate-500 font-semibold mb-2">Model Relationships</div>
+                                    <div class="bg-emerald-950 rounded-lg p-4 overflow-x-auto">
+                                        <pre class="text-xs text-emerald-200 font-mono">${relationsMethods}</pre>
+                                    </div>
+                                    <div class="mt-2 flex justify-end">
+                                        <button onclick="app.copyToClipboard(generators.relations(state.tables.find(t=>t.id=='${table.id}')))" class="flex items-center gap-2 text-xs font-semibold bg-emerald-100 hover:bg-emerald-200 text-emerald-700 px-3 py-2 rounded transition-colors">
+                                            <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy Relations
+                                        </button>
+                                    </div>
+                                </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                backdrop.classList.remove('hidden');
+                setTimeout(() => {
+                    backdrop.classList.remove('opacity-0');
+                    content.classList.remove('scale-95');
+                    content.classList.add('scale-100');
+                    lucide.createIcons({ root: body });
+                }, 10);
+            },
+            closeExpandModal: () => {
+                const backdrop = document.getElementById('expand-modal-backdrop');
+                const content = document.getElementById('expand-modal-content');
+                backdrop.classList.add('opacity-0');
+                content.classList.remove('scale-100');
+                content.classList.add('scale-95');
+                setTimeout(() => {
+                    backdrop.classList.add('hidden');
+                }, 200);
+            },
             confirmClear: () => { state.tables = []; state.relations = []; app.saveState(); app.renderAll(); app.closeClearModal(); app.showToast('Board cleared'); },
             addTable: () => {
                 const input = document.getElementById('new-table-name'); const rawName = input.value; if (!rawName.trim()) return;
@@ -1178,7 +1360,7 @@
                     titleContent = `<input type="text" value="${table.name}" class="w-full bg-white/10 text-white placeholder-white/50 border border-white/30 rounded px-1.5 py-0.5 text-sm font-bold outline-none focus:bg-white/20 focus:border-white" onblur="app.finishRename('${table.id}', this.value)" onkeydown="if(event.key === 'Enter') app.finishRename('${table.id}', this.value)" autoFocus >`;
                     setTimeout(() => { const input = el.querySelector('input[type="text"]'); if(input) { input.focus(); input.select(); } }, 10);
                 }
-                const headerHtml = `<div class="table-header flex items-center justify-between p-3 ${headerBg} cursor-grab active:cursor-grabbing rounded-t-xl select-none group relative overflow-hidden" onmousedown="app.startDragTable(event, '${table.id}')"> <div class="absolute inset-0 bg-gradient-to-tr from-black/5 to-transparent pointer-events-none"></div> <div class="flex items-center gap-2 flex-1 mr-2 relative z-10"> <i data-lucide="table-2" class="w-4 h-4 text-white/70"></i> ${titleContent} </div> <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity relative z-10"> <button onmousedown="app.startConnectionDrag(event, '${table.id}')" class="p-1.5 rounded bg-white/10 hover:bg-white/20 text-white/90 transition-colors backdrop-blur-sm shadow-sm" title="Drag to Connect"> <i data-lucide="link" class="w-3 h-3"></i> </button> <button onclick="event.stopPropagation(); app.deleteTable('${table.id}')" class="p-1.5 rounded bg-white/10 hover:bg-rose-500 text-white/90 hover:text-white transition-colors backdrop-blur-sm shadow-sm" title="Delete Table"> <i data-lucide="trash-2" class="w-3 h-3"></i> </button> </div> </div>`;
+                const headerHtml = `<div class="table-header flex items-center justify-between p-3 ${headerBg} cursor-grab active:cursor-grabbing rounded-t-xl select-none group relative overflow-hidden" onmousedown="app.startDragTable(event, '${table.id}')"> <div class="absolute inset-0 bg-gradient-to-tr from-black/5 to-transparent pointer-events-none"></div> <div class="flex items-center gap-2 flex-1 mr-2 relative z-10"> <i data-lucide="table-2" class="w-4 h-4 text-white/70"></i> ${titleContent} </div> <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity relative z-10"> <button onclick="event.stopPropagation(); app.openExpandModal('${table.id}')" class="p-1.5 rounded bg-white/10 hover:bg-white/20 text-white/90 transition-colors backdrop-blur-sm shadow-sm" title="Expand View"> <i data-lucide="maximize-2" class="w-3 h-3"></i> </button> <button onmousedown="app.startConnectionDrag(event, '${table.id}')" class="p-1.5 rounded bg-white/10 hover:bg-white/20 text-white/90 transition-colors backdrop-blur-sm shadow-sm" title="Drag to Connect"> <i data-lucide="link" class="w-3 h-3"></i> </button> <button onclick="event.stopPropagation(); app.deleteTable('${table.id}')" class="p-1.5 rounded bg-white/10 hover:bg-rose-500 text-white/90 hover:text-white transition-colors backdrop-blur-sm shadow-sm" title="Delete Table"> <i data-lucide="trash-2" class="w-3 h-3"></i> </button> </div> </div>`;
                 const tabsHtml = `<div class="flex text-[11px] font-semibold border-b border-slate-100 bg-white"> <button onclick="app.setTab('${table.id}', 'fields')" class="flex-1 py-2.5 text-center transition-colors relative ${table.activeTab === 'fields' ? `text-${baseColor}-600 bg-${baseColor}-50/50` : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}"> Structure ${table.activeTab === 'fields' ? `<span class="absolute bottom-0 left-0 w-full h-[2px] bg-${baseColor}-600"></span>` : ''} </button> <button onclick="app.setTab('${table.id}', 'sql')" class="flex-1 py-2.5 text-center transition-colors relative ${table.activeTab === 'sql' ? `text-${baseColor}-600 bg-${baseColor}-50/50` : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}"> SQL ${table.activeTab === 'sql' ? `<span class="absolute bottom-0 left-0 w-full h-[2px] bg-${baseColor}-600"></span>` : ''} </button> <button onclick="app.setTab('${table.id}', 'laravel')" class="flex-1 py-2.5 text-center transition-colors relative ${table.activeTab === 'laravel' ? `text-${baseColor}-600 bg-${baseColor}-50/50` : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}"> Laravel ${table.activeTab === 'laravel' ? `<span class="absolute bottom-0 left-0 w-full h-[2px] bg-${baseColor}-600"></span>` : ''} </button> </div>`;
                 let contentHtml = '';
                 if (table.activeTab === 'fields') {
