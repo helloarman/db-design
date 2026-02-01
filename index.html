@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Design Workboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            user-select: none; /* Prevent text selection while dragging */
+        }
+        
+        /* Grid Background */
+        #canvas-container {
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            transition: background-position 0.05s ease;
+        }
+
+        /* Scrollbar hiding for internal elements */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Syntax Highlighting Mock */
+        .code-block {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.75rem;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-break: break-all;
+            user-select: text;
+            cursor: text;
+        }
+        
+        /* Smooth transitions for tabs */
+        .tab-content {
+            animation: fadeIn 0.2s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Dragging visuals */
+        .dragging-row {
+            opacity: 0.4;
+            background-color: #f1f5f9;
+            border: 2px dashed #94a3b8;
+        }
+
+        /* Connection Animation */
+        .connection-line {
+            stroke-dasharray: 10, 5;
+            animation: flow 60s linear infinite; /* Very slow flow */
+        }
+        .connection-line-active {
+            stroke-dasharray: 8, 4;
+            animation: flow 1s linear infinite; /* Fast flow for active creation */
+        }
+        
+        @keyframes flow {
+            to {
+                stroke-dashoffset: -1000;
+            }
+        }
+
+        /* Badge Styles */
+        .relation-badge {
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        .relation-badge:hover {
+            transform: scale(1.1);
+            z-index: 50;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 w-screen h-screen relative">
+
+    <!-- Hidden Inputs -->
+    <input type="file" id="import-file" accept=".json" class="hidden" onchange="app.handleFileSelect(event)">
+
+    <!-- UI Layer: Toolbar (Left) -->
+    <div id="left-toolbar" class="absolute top-4 left-4 z-50 flex flex-col gap-2 transition-opacity duration-300">
+        <div class="bg-white shadow-lg rounded-xl p-2 border border-slate-200 flex flex-col gap-2">
+            <div class="p-2 bg-indigo-600 text-white rounded-lg flex items-center justify-center shadow-md">
+                <i data-lucide="database" class="w-6 h-6"></i>
+            </div>
+            <div class="h-px bg-slate-200 my-1"></div>
+            
+            <button onclick="app.openModal()" class="p-3 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors tooltip-container group relative" title="Add Table">
+                <i data-lucide="plus" class="w-6 h-6"></i>
+                <span class="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap">Add Table</span>
+            </button>
+            
+            <button onclick="app.autoLayout()" class="p-3 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors group relative" title="Beautify Layout">
+                <i data-lucide="sparkles" class="w-6 h-6 text-amber-500"></i>
+                <span class="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap">Beautify</span>
+            </button>
+
+            <button onclick="app.resetView()" class="p-3 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors group relative" title="Reset View">
+                <i data-lucide="move" class="w-6 h-6"></i>
+                <span class="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap">Reset View</span>
+            </button>
+
+            <div class="h-px bg-slate-200 my-1"></div>
+
+            <button onclick="app.exportSchema()" class="p-3 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors group relative" title="Export JSON">
+                <i data-lucide="download" class="w-6 h-6"></i>
+                <span class="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap">Export</span>
+            </button>
+
+            <button onclick="app.triggerImport()" class="p-3 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors group relative" title="Import JSON">
+                <i data-lucide="upload" class="w-6 h-6"></i>
+                <span class="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap">Import</span>
+            </button>
+
+            <div class="h-px bg-slate-200 my-1"></div>
+
+            <button onclick="app.requestClear()" class="p-3 hover:bg-rose-50 rounded-lg text-rose-500 transition-colors group relative" title="Clear Board">
+                <i data-lucide="trash-2" class="w-6 h-6"></i>
+                <span class="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap">Clear All</span>
+            </button>
+
+            <div class="h-px bg-slate-200 my-1"></div>
+
+            <button onclick="app.zoomIn()" class="p-3 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors group relative">
+                <i data-lucide="zoom-in" class="w-6 h-6"></i>
+            </button>
+            <button onclick="app.zoomOut()" class="p-3 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors group relative">
+                <i data-lucide="zoom-out" class="w-6 h-6"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- UI Layer: Top Right View Toggle -->
+    <div class="absolute top-4 right-4 z-50 bg-white p-1 rounded-lg shadow-md border border-slate-200 flex text-sm font-medium">
+        <button onclick="app.switchView('board')" id="btn-view-board" class="px-3 py-1.5 rounded-md bg-indigo-50 text-indigo-600 shadow-sm transition-all flex items-center gap-2">
+            <i data-lucide="layout-grid" class="w-4 h-4"></i> Board
+        </button>
+        <button onclick="app.switchView('list')" id="btn-view-list" class="px-3 py-1.5 rounded-md text-slate-500 hover:bg-slate-50 transition-all flex items-center gap-2">
+            <i data-lucide="list" class="w-4 h-4"></i> List
+        </button>
+        <button onclick="app.switchView('tree')" id="btn-view-tree" class="px-3 py-1.5 rounded-md text-slate-500 hover:bg-slate-50 transition-all flex items-center gap-2">
+            <i data-lucide="network" class="w-4 h-4"></i> Tree
+        </button>
+    </div>
+
+    <!-- UI Layer: Info -->
+    <div id="bottom-info" class="absolute bottom-4 left-4 z-40 bg-white/80 backdrop-blur px-4 py-2 rounded-full border border-slate-200 text-xs text-slate-500 shadow-sm pointer-events-none transition-opacity duration-300">
+        <span id="stats-display">Loading...</span>
+    </div>
+
+    <!-- UI Layer: Connection Feedback -->
+    <div id="connection-feedback" class="hidden fixed bottom-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-6 py-3 rounded-full shadow-xl z-50 animate-bounce flex items-center gap-3">
+        <i data-lucide="link" class="w-4 h-4 text-indigo-400"></i>
+        <span id="connection-text">Drag to target table...</span>
+    </div>
+
+    <!-- UI Layer: Toast Notification -->
+    <div id="toast-notification" class="hidden fixed bottom-20 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-4 py-2 rounded-lg shadow-lg z-[60] text-sm opacity-0 transition-opacity duration-300">
+        <span id="toast-message">Copied!</span>
+    </div>
+
+    <!-- View: Canvas -->
+    <div id="canvas-container" class="relative w-full h-full overflow-hidden cursor-grab active:cursor-grabbing">
+        <div id="canvas-world" class="absolute origin-top-left will-change-transform">
+            <!-- SVG Layer for connections -->
+            <svg id="connections-layer" class="absolute top-0 left-0 overflow-visible" style="width: 10000px; height: 10000px; z-index: 0; pointer-events: none;">
+                <defs>
+                    <marker id="marker-one" markerWidth="12" markerHeight="12" refX="0" refY="6" orient="auto"><path d="M0,0 L0,12 M4,6" stroke="#94a3b8" stroke-width="2" fill="none"/></marker>
+                    <marker id="marker-many" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M0,6 L10,6 M10,6 L0,0 M10,6 L0,12" stroke="#94a3b8" stroke-width="2" fill="none"/></marker>
+                    <marker id="marker-one-end" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M10,0 L10,12 M0,6 L10,6" stroke="#94a3b8" stroke-width="2" fill="none"/></marker>
+                    <marker id="marker-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10" fill="#6366f1" /></marker>
+                </defs>
+            </svg>
+            <!-- Nodes Layer -->
+            <div id="nodes-layer" class="absolute top-0 left-0" style="z-index: 1;"></div>
+            <!-- Labels Layer -->
+             <div id="labels-layer" class="absolute top-0 left-0 pointer-events-none" style="z-index: 2;"></div>
+        </div>
+    </div>
+
+    <!-- View: List Container -->
+    <div id="list-view-container" class="hidden absolute inset-0 bg-slate-50 z-30 overflow-y-auto pt-20 pb-10 px-4">
+        <div class="max-w-4xl mx-auto space-y-8" id="list-content"></div>
+    </div>
+
+    <!-- View: Tree Container -->
+    <div id="tree-view-container" class="hidden absolute inset-0 bg-slate-50 z-30 overflow-y-auto pt-20 pb-10 px-4">
+        <div class="max-w-3xl mx-auto" id="tree-content"></div>
+    </div>
+
+    <!-- Modals -->
+    <div id="modal-backdrop" class="hidden fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center transition-opacity opacity-0">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden transform scale-95 transition-transform p-6" id="modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-gray-800">Create New Table</h3>
+                <button onclick="app.closeModal()" class="p-1 hover:bg-gray-100 rounded-full text-gray-500">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="flex flex-col gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Table Name</label>
+                    <div class="relative">
+                        <input type="text" id="new-table-name" placeholder="e.g. User Orders" 
+                            class="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                            onkeyup="if(event.key === 'Enter') app.addTable()">
+                        <div class="absolute left-3 top-2.5 text-slate-400">
+                            <i data-lucide="type" class="w-4 h-4"></i>
+                        </div>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-2">Preview: <span id="name-preview" class="font-mono text-indigo-600 font-medium">...</span></p>
+                </div>
+                <button onclick="app.addTable()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg font-medium transition-colors shadow-sm">
+                    Create Table
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="clear-modal-backdrop" class="hidden fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center transition-opacity opacity-0">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden transform scale-95 transition-transform p-6" id="clear-modal-content">
+            <div class="flex flex-col items-center text-center gap-4">
+                <div class="w-12 h-12 rounded-full bg-rose-100 text-rose-500 flex items-center justify-center">
+                    <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-gray-800">Clear Board?</h3>
+                    <p class="text-sm text-slate-500 mt-1">All tables and relationships will be permanently deleted. This action cannot be undone.</p>
+                </div>
+                <div class="flex gap-3 w-full mt-2">
+                    <button onclick="app.closeClearModal()" class="flex-1 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-colors">
+                        Cancel
+                    </button>
+                    <button onclick="app.confirmClear()" class="flex-1 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-medium transition-colors shadow-sm">
+                        Clear All
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Javascript Application -->
+    <script>
+        const CONSTANTS = {
+            DATA_TYPES: [
+                'foreignId', 'INT', 'BIGINT', 'TINYINT', 'SMALLINT', 'DECIMAL', 'FLOAT', 'DOUBLE',
+                'VARCHAR', 'TEXT', 'LONGTEXT', 'ENUM',
+                'UUID', 'BOOLEAN',
+                'DATE', 'TIME', 'DATETIME', 'TIMESTAMP',
+                'JSON', 'BINARY'
+            ],
+            COLORS: ['border-blue-500', 'border-emerald-500', 'border-purple-500', 'border-amber-500', 'border-rose-500', 'border-cyan-500']
+        };
+
+        let state = {
+            tables: [],
+            relations: [], 
+            view: { x: 0, y: 0, scale: 1 },
+            ui: {
+                isDraggingCanvas: false,
+                dragStart: { x: 0, y: 0 },
+                draggingTable: null,
+                draggingField: null,
+                connectingFrom: null,
+                mousePos: { x: 0, y: 0 },
+                renamingTableId: null,
+                activeView: 'board', // 'board' | 'list' | 'tree'
+                expandedNodes: new Set() // stores paths like "rootId/childId"
+            }
+        };
+
+        const generators = {
+            sql: (table) => {
+                let sql = `CREATE TABLE ${table.name} (\n`;
+                const lines = table.fields.map(f => {
+                    let typeStr = f.type;
+                    if (f.type === 'foreignId') typeStr = 'BIGINT UNSIGNED';
+                    if (f.type === 'ENUM' && f.enumValues) typeStr = `ENUM(${f.enumValues})`;
+                    let line = `  ${f.name} ${typeStr}`;
+                    if (f.isPk) line += ' PRIMARY KEY';
+                    if (!f.isNullable && !f.isPk) line += ' NOT NULL';
+                    return line;
+                });
+                state.relations.filter(r => r.toTableId === table.id).forEach(r => {
+                    const fromT = state.tables.find(t => t.id === r.fromTableId);
+                    const field = table.fields.find(f => f.id === r.fkFieldId);
+                    if(fromT && field) { lines.push(`  FOREIGN KEY (${field.name}) REFERENCES ${fromT.name}(id) ON DELETE CASCADE`); }
+                });
+                sql += lines.join(',\n');
+                sql += '\n);';
+                return sql;
+            },
+            laravel: (table) => {
+                let php = `Schema::create('${table.name}', function (Blueprint $table) {\n`;
+                table.fields.forEach(f => {
+                    let method = 'string';
+                    let args = `'${f.name}'`;
+                    const rel = state.relations.find(r => r.toTableId === table.id && r.fkFieldId === f.id);
+                    if (rel) {
+                        const fromTable = state.tables.find(t => t.id === rel.fromTableId);
+                        if (fromTable) {
+                            let line = `    $table->foreignId('${f.name}')`;
+                            if (f.isNullable) line += '->nullable()';
+                            line += `->constrained('${fromTable.name}')->onDelete('cascade')`;
+                            line += ';';
+                            php += line + '\n';
+                            return; 
+                        }
+                    }
+                    switch(f.type) {
+                        case 'foreignId': method = 'foreignId'; break;
+                        case 'UUID': method = 'uuid'; break;
+                        case 'INT': method = 'integer'; break;
+                        case 'BIGINT': method = 'bigInteger'; break;
+                        case 'TINYINT': method = 'tinyInteger'; break;
+                        case 'SMALLINT': method = 'smallInteger'; break;
+                        case 'DECIMAL': method = 'decimal'; break;
+                        case 'FLOAT': method = 'float'; break;
+                        case 'DOUBLE': method = 'double'; break;
+                        case 'TEXT': method = 'text'; break;
+                        case 'LONGTEXT': method = 'longText'; break;
+                        case 'BOOLEAN': method = 'boolean'; break;
+                        case 'DATE': method = 'date'; break;
+                        case 'TIME': method = 'time'; break;
+                        case 'DATETIME': method = 'dateTime'; break;
+                        case 'TIMESTAMP': method = 'timestamp'; break;
+                        case 'JSON': method = 'json'; break;
+                        case 'BINARY': method = 'binary'; break;
+                        case 'ENUM': 
+                            method = 'enum'; 
+                            const arrValues = f.enumValues ? f.enumValues.split(',').map(s => `'${s.trim().replace(/^['"]|['"]$/g, '')}'`).join(', ') : '';
+                            args = `'${f.name}', [${arrValues}]`;
+                            break;
+                    }
+                    if (f.name === 'id' && f.isPk) {
+                        if (f.type === 'BIGINT' || f.type === 'foreignId') method = 'id';
+                        else if (f.type === 'UUID') method = 'uuid';
+                        args = f.name === 'id' && method === 'id' ? '' : `'${f.name}'`;
+                    }
+                    if (f.name === 'created_at' && f.type === 'TIMESTAMP') { php += `    $table->timestamps();\n`; return; }
+                    let line = `    $table->${method}(${args})`;
+                    if (f.isPk && f.name !== 'id') line += '->primary()';
+                    if (f.isNullable) line += '->nullable()';
+                    line += ';';
+                    php += line + '\n';
+                });
+                php += `});`;
+                return php;
+            }
+        };
+
+        const app = {
+            init: () => {
+                app.loadState();
+                if (state.tables.length === 0) {
+                    state.tables = [{
+                        id: 'users_tbl', name: 'users', x: 100, y: 100, color: 'border-blue-500', activeTab: 'fields',
+                        fields: [
+                            { id: 'f1', name: 'id', type: 'UUID', isPk: true, isNullable: false },
+                            { id: 'f2', name: 'email', type: 'VARCHAR', isPk: false, isNullable: false },
+                            { id: 'f3', name: 'created_at', type: 'TIMESTAMP', isPk: false, isNullable: true },
+                        ]
+                    }];
+                }
+                
+                // Initialize expandedNodes if it was lost in parsing (Set is not JSON stringifiable)
+                if(!state.ui.expandedNodes) state.ui.expandedNodes = new Set();
+                
+                app.updateCanvasTransform();
+                app.renderAll();
+                app.attachListeners();
+                lucide.createIcons();
+                document.getElementById('new-table-name').addEventListener('input', (e) => {
+                    document.getElementById('name-preview').textContent = app.formatName(e.target.value) || '...';
+                });
+            },
+
+            saveState: () => {
+                localStorage.setItem('db_workboard_state', JSON.stringify({
+                    tables: state.tables,
+                    relations: state.relations,
+                    view: state.view
+                }));
+            },
+
+            loadState: () => {
+                const saved = localStorage.getItem('db_workboard_state');
+                if (saved) {
+                    try {
+                        const parsed = JSON.parse(saved);
+                        state.tables = parsed.tables || [];
+                        state.relations = parsed.relations || [];
+                        state.view = parsed.view || { x: 0, y: 0, scale: 1 };
+                        state.ui.expandedNodes = new Set(); // Reset visual state
+                    } catch (e) { console.error('Failed to load state', e); }
+                }
+            },
+
+            // --- View Switching ---
+            switchView: (mode) => {
+                state.ui.activeView = mode;
+                const boardBtn = document.getElementById('btn-view-board');
+                const listBtn = document.getElementById('btn-view-list');
+                const treeBtn = document.getElementById('btn-view-tree');
+                
+                const canvas = document.getElementById('canvas-container');
+                const list = document.getElementById('list-view-container');
+                const tree = document.getElementById('tree-view-container');
+                
+                const leftToolbar = document.getElementById('left-toolbar');
+                const bottomInfo = document.getElementById('bottom-info');
+
+                // Reset styles
+                const activeClass = "px-3 py-1.5 rounded-md bg-indigo-50 text-indigo-600 shadow-sm transition-all flex items-center gap-2";
+                const inactiveClass = "px-3 py-1.5 rounded-md text-slate-500 hover:bg-slate-50 transition-all flex items-center gap-2";
+                
+                boardBtn.className = mode === 'board' ? activeClass : inactiveClass;
+                listBtn.className = mode === 'list' ? activeClass : inactiveClass;
+                treeBtn.className = mode === 'tree' ? activeClass : inactiveClass;
+
+                canvas.classList.add('hidden');
+                list.classList.add('hidden');
+                tree.classList.add('hidden');
+                leftToolbar.classList.add('opacity-20', 'pointer-events-none');
+                bottomInfo.classList.add('opacity-0');
+
+                if (mode === 'board') {
+                    canvas.classList.remove('hidden');
+                    leftToolbar.classList.remove('opacity-20', 'pointer-events-none');
+                    bottomInfo.classList.remove('opacity-0');
+                    app.renderAll();
+                } else if (mode === 'list') {
+                    list.classList.remove('hidden');
+                    app.renderListView();
+                } else if (mode === 'tree') {
+                    tree.classList.remove('hidden');
+                    app.renderTreeView();
+                }
+            },
+
+            // --- Tree View Logic ---
+            toggleTreeNode: (path) => {
+                if(state.ui.expandedNodes.has(path)) {
+                    state.ui.expandedNodes.delete(path);
+                } else {
+                    state.ui.expandedNodes.add(path);
+                }
+                app.renderTreeView();
+            },
+
+            renderTreeView: () => {
+                const container = document.getElementById('tree-content');
+                container.innerHTML = '';
+
+                // Build Graph
+                const adj = {}; 
+                const inDegree = {};
+                state.tables.forEach(t => { adj[t.id] = []; inDegree[t.id] = 0; });
+                
+                state.relations.forEach(r => {
+                    if (adj[r.fromTableId]) {
+                        adj[r.fromTableId].push(r.toTableId);
+                        inDegree[r.toTableId] = (inDegree[r.toTableId] || 0) + 1;
+                    }
+                });
+
+                // Get Roots
+                const roots = state.tables.filter(t => inDegree[t.id] === 0);
+                
+                // Fallback for circular/complex graphs: ensure every table appears at least once if not reached
+                // For now simple root logic. If no roots found (fully circular), pick one?
+                let nodesToRender = [...roots];
+                if(nodesToRender.length === 0 && state.tables.length > 0) nodesToRender = [state.tables[0]];
+
+                const renderNode = (tableId, parentPath = 'root', depth = 0, visited = new Set()) => {
+                    if (visited.has(tableId)) return ''; 
+                    // Allow revisiting in tree (A->B, C->B) but check recursion depth or cycles if needed
+                    // Simple tree visualization usually allows duplication across branches
+                    const currentPath = `${parentPath}/${tableId}`;
+                    
+                    const table = state.tables.find(t => t.id === tableId);
+                    if (!table) return '';
+
+                    const children = adj[tableId] || [];
+                    const hasChildren = children.length > 0;
+                    const isExpanded = state.ui.expandedNodes.has(currentPath);
+                    const baseColor = table.color.split('-')[1];
+
+                    // Styling based on level
+                    const paddingLeft = depth > 0 ? 'ml-6 border-l-2 border-slate-200 pl-3' : '';
+
+                    let html = `
+                        <div class="mb-2 ${paddingLeft} transition-all">
+                            <div class="flex items-center gap-2 group">
+                                <button onclick="app.toggleTreeNode('${currentPath}')" 
+                                    class="w-6 h-6 flex items-center justify-center rounded hover:bg-slate-200 text-slate-400 transition-colors ${!hasChildren ? 'invisible' : ''}">
+                                    <i data-lucide="chevron-right" class="w-4 h-4 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}"></i>
+                                </button>
+                                
+                                <div class="flex-1 bg-white rounded-lg border border-slate-200 shadow-sm p-3 hover:shadow-md transition-all flex items-center gap-3 relative overflow-hidden" 
+                                     onclick="app.toggleTreeNode('${currentPath}')">
+                                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-${baseColor}-500"></div>
+                                    <div class="p-1.5 rounded-md bg-${baseColor}-50 text-${baseColor}-600">
+                                        <i data-lucide="table-2" class="w-4 h-4"></i>
+                                    </div>
+                                    <div class="flex flex-col">
+                                        <div class="flex items-center gap-2">
+                                            <span class="font-bold text-slate-700 text-sm">${table.name}</span>
+                                            <span class="text-[10px] bg-slate-100 text-slate-500 px-1.5 rounded-full border border-slate-100">${table.fields.length}</span>
+                                        </div>
+                                        <div class="text-[10px] text-slate-400 font-mono flex gap-2">
+                                            ${table.fields.slice(0, 3).map(f => f.name).join(', ')}${table.fields.length > 3 ? '...' : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            ${hasChildren && isExpanded ? `
+                                <div class="mt-2">
+                                    ${children.map(childId => renderNode(childId, currentPath, depth + 1, new Set(visited).add(tableId))).join('')}
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                    return html;
+                };
+
+                if (nodesToRender.length === 0) {
+                    container.innerHTML = `<div class="text-center text-slate-400 py-20">No tables found. Switch to Board view to add tables.</div>`;
+                } else {
+                    nodesToRender.forEach(t => {
+                        const div = document.createElement('div');
+                        div.innerHTML = renderNode(t.id);
+                        container.appendChild(div);
+                    });
+                }
+                
+                lucide.createIcons();
+            },
+
+            renderListView: () => {
+                const container = document.getElementById('list-content');
+                container.innerHTML = '';
+
+                const tableLevelMap = {};
+                state.tables.forEach(t => tableLevelMap[t.id] = 0);
+
+                let changed = true;
+                let iterations = 0;
+                while(changed && iterations < state.tables.length + 2) {
+                    changed = false;
+                    state.relations.forEach(r => {
+                        if (tableLevelMap[r.toTableId] < tableLevelMap[r.fromTableId] + 1) {
+                            tableLevelMap[r.toTableId] = tableLevelMap[r.fromTableId] + 1;
+                            changed = true;
+                        }
+                    });
+                    iterations++;
+                }
+
+                const maxLevel = Object.values(tableLevelMap).length ? Math.max(...Object.values(tableLevelMap)) : 0;
+                
+                for (let l = 0; l <= maxLevel; l++) {
+                    const tablesInLevel = state.tables.filter(t => tableLevelMap[t.id] === l);
+                    if (tablesInLevel.length === 0) continue;
+
+                    const levelSection = document.createElement('div');
+                    levelSection.className = "space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500";
+                    const levelTitle = l === 0 ? "Level 0 (Root Tables)" : `Level ${l} (Dependent Tables)`;
+                    levelSection.innerHTML = `<h2 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2 border-b border-slate-200 pb-2 flex justify-between"><span>${levelTitle}</span> <span class="text-slate-300 font-normal">${tablesInLevel.length} tables</span></h2>`;
+
+                    const grid = document.createElement('div');
+                    grid.className = "grid grid-cols-1 gap-4";
+
+                    tablesInLevel.forEach(table => {
+                        const cardWrapper = document.createElement('div');
+                        cardWrapper.id = `list-card-${table.id}`;
+                        cardWrapper.className = "bg-white rounded-lg border border-slate-200 shadow-sm flex flex-col hover:shadow-md transition-shadow relative overflow-hidden";
+                        grid.appendChild(cardWrapper);
+                        
+                        // Pass element explicitly to avoid query selector issues during rendering loop
+                        app.renderListCard(table, cardWrapper);
+                    });
+
+                    levelSection.appendChild(grid);
+                    container.appendChild(levelSection);
+                }
+                
+                lucide.createIcons();
+            },
+
+            renderListCard: (table, targetEl = null) => {
+                const el = targetEl || document.getElementById(`list-card-${table.id}`);
+                if(!el) return;
+
+                const baseColor = table.color.split('-')[1];
+                const parentRels = state.relations.filter(r => r.toTableId === table.id);
+                const parentNames = parentRels.map(r => {
+                    const p = state.tables.find(t => t.id === r.fromTableId);
+                    return p ? `<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-100">${p.name}</span>` : '';
+                }).join(' ');
+
+                const accent = `<div class="absolute left-0 top-0 bottom-0 w-1 bg-${baseColor}-500"></div>`;
+
+                const headerHtml = `
+                    <div class="p-4 pb-2">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <h3 class="font-bold text-slate-800 text-lg">${table.name}</h3>
+                                    <div class="text-[10px] text-slate-400 font-mono bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">${table.fields.length} cols</div>
+                                </div>
+                                <div class="text-xs text-slate-500 mt-1.5 flex flex-wrap gap-2 items-center">
+                                    ${parentRels.length > 0 
+                                        ? `<span class="font-semibold text-slate-400 flex items-center gap-1"><i data-lucide="arrow-up-left" class="w-3 h-3"></i> Prerequisites:</span> ${parentNames}` 
+                                        : '<span class="text-slate-400 italic flex items-center gap-1"><i data-lucide="minus-circle" class="w-3 h-3"></i> No dependencies</span>'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                const tabsHtml = `
+                    <div class="flex text-[11px] font-semibold border-b border-slate-100 bg-slate-50/50 px-4">
+                        <button onclick="app.setTab('${table.id}', 'fields')" 
+                            class="py-2 px-3 text-center transition-colors relative ${table.activeTab === 'fields' ? `text-${baseColor}-600 bg-white border-x border-t border-slate-100 rounded-t-lg -mb-px` : 'text-slate-400 hover:text-slate-600'}">
+                            Structure
+                        </button>
+                        <button onclick="app.setTab('${table.id}', 'sql')" 
+                            class="py-2 px-3 text-center transition-colors relative ${table.activeTab === 'sql' ? `text-${baseColor}-600 bg-white border-x border-t border-slate-100 rounded-t-lg -mb-px` : 'text-slate-400 hover:text-slate-600'}">
+                            SQL
+                        </button>
+                        <button onclick="app.setTab('${table.id}', 'laravel')" 
+                            class="py-2 px-3 text-center transition-colors relative ${table.activeTab === 'laravel' ? `text-${baseColor}-600 bg-white border-x border-t border-slate-100 rounded-t-lg -mb-px` : 'text-slate-400 hover:text-slate-600'}">
+                            Laravel
+                        </button>
+                    </div>
+                `;
+
+                let contentHtml = '';
+
+                if (table.activeTab === 'fields') {
+                    contentHtml = `
+                        <div class="p-4 pt-3">
+                            <div class="flex flex-wrap gap-2">
+                                ${table.fields.map(f => {
+                                    let icon = '';
+                                    if(f.isPk) icon = '<i data-lucide="key" class="w-3 h-3 text-amber-500 mr-1"></i>';
+                                    else if(f.isFk) icon = '<i data-lucide="link-2" class="w-3 h-3 text-blue-500 mr-1"></i>';
+                                    
+                                    return `
+                                        <div class="flex items-center text-xs text-slate-600 bg-slate-50 rounded px-2 py-1 border border-slate-100" title="${f.type}">
+                                            ${icon}
+                                            <span class="font-mono font-medium">${f.name}</span>
+                                            <span class="text-[9px] uppercase text-slate-400 font-bold ml-1.5 opacity-70 mr-1.5">${f.type.substring(0,3)}</span>
+                                            
+                                            <button onclick="app.toggleFieldProp('${table.id}', '${f.id}', 'isNullable')" 
+                                                class="px-1.5 py-0.5 rounded text-[9px] font-bold border transition-colors ${f.isNullable ? 'bg-indigo-100 text-indigo-600 border-indigo-200' : 'bg-white text-slate-300 border-slate-200 hover:border-slate-300 hover:text-slate-400'}" 
+                                                title="Toggle Nullable" 
+                                                ${f.isPk ? 'disabled style="opacity:0.3"' : ''}>
+                                                N
+                                            </button>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                    `;
+                } else if (table.activeTab === 'sql') {
+                    contentHtml = `
+                        <div class="p-0 bg-slate-50/50">
+                            <div class="overflow-auto max-h-48 p-4 custom-scrollbar">
+                                <pre class="code-block text-slate-600 text-xs">${generators.sql(table)}</pre>
+                            </div>
+                            <div class="px-4 py-2 border-t border-slate-100 bg-white flex justify-end">
+                                <button onclick="app.copyToClipboard(generators.sql(state.tables.find(t=>t.id=='${table.id}')))" class="flex items-center justify-center gap-2 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded transition-colors">
+                                    <i data-lucide="copy" class="w-3 h-3"></i> Copy SQL
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                } else if (table.activeTab === 'laravel') {
+                    contentHtml = `
+                        <div class="p-0 bg-slate-50/50">
+                            <div class="overflow-auto max-h-48 p-4 custom-scrollbar">
+                                <pre class="code-block text-indigo-600 text-xs">${generators.laravel(table)}</pre>
+                            </div>
+                            <div class="px-4 py-2 border-t border-slate-100 bg-white flex justify-end">
+                                <button onclick="app.copyToClipboard(generators.laravel(state.tables.find(t=>t.id=='${table.id}')))" class="flex items-center justify-center gap-2 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded transition-colors">
+                                    <i data-lucide="copy" class="w-3 h-3"></i> Copy Migration
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                el.innerHTML = accent + headerHtml + tabsHtml + contentHtml;
+                lucide.createIcons({ root: el });
+            },
+
+            toggleFieldProp: (tableId, fieldId, prop) => {
+                const table = state.tables.find(t => t.id === tableId);
+                const field = table.fields.find(f => f.id === fieldId);
+                if (field) {
+                    // Rule: Primary Keys cannot be nullable
+                    if (prop === 'isNullable' && field.isPk) return;
+
+                    field[prop] = !field[prop];
+                    app.saveState();
+                    
+                    if (state.ui.activeView === 'board') {
+                        app.renderTable(table);
+                    } else if (state.ui.activeView === 'list') {
+                        app.renderListCard(table);
+                    }
+                }
+            },
+
+            // --- Helpers, State, Toast, Logic (Keep existing) ---
+            generateId: () => Math.random().toString(36).substr(2, 9),
+            formatName: (name) => name.trim().toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''),
+            getSingular: (name) => {
+                if (name.endsWith('ies')) return name.slice(0, -3) + 'y';
+                if (name.endsWith('s')) return name.slice(0, -1);
+                return name;
+            },
+            showToast: (message) => {
+                const toast = document.getElementById('toast-notification');
+                const msgSpan = document.getElementById('toast-message');
+                msgSpan.textContent = message;
+                toast.classList.remove('hidden');
+                setTimeout(() => { toast.classList.remove('opacity-0'); }, 10);
+                setTimeout(() => {
+                    toast.classList.add('opacity-0');
+                    setTimeout(() => { toast.classList.add('hidden'); }, 300);
+                }, 2000);
+            },
+            copyToClipboard: (text) => {
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                textArea.style.position = "fixed"; textArea.style.left = "-9999px";
+                document.body.appendChild(textArea);
+                textArea.focus(); textArea.select();
+                try {
+                    const successful = document.execCommand('copy');
+                    const msg = successful ? 'Copied to clipboard!' : 'Failed to copy';
+                    app.showToast(msg);
+                } catch (err) { app.showToast('Failed to copy'); }
+                document.body.removeChild(textArea);
+            },
+            exportSchema: () => {
+                const data = { tables: state.tables, relations: state.relations, view: state.view };
+                const json = JSON.stringify(data, null, 2);
+                const blob = new Blob([json], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a'); a.href = url; a.download = `db-schema-${new Date().toISOString().slice(0,10)}.json`;
+                document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+                app.showToast('Schema exported!');
+            },
+            triggerImport: () => { document.getElementById('import-file').click(); },
+            handleFileSelect: (event) => {
+                const file = event.target.files[0]; if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        if (data.tables && data.relations) {
+                            state.tables = data.tables; state.relations = data.relations; state.view = data.view || { x: 0, y: 0, scale: 1 };
+                            app.saveState(); app.renderAll(); app.updateCanvasTransform(); app.showToast('Schema imported!');
+                        } else { alert('Invalid file'); }
+                    } catch (err) { alert('Error parsing JSON'); }
+                    event.target.value = '';
+                };
+                reader.readAsText(file);
+            },
+            requestClear: () => {
+                const backdrop = document.getElementById('clear-modal-backdrop'); const content = document.getElementById('clear-modal-content');
+                backdrop.classList.remove('hidden'); setTimeout(() => { backdrop.classList.remove('opacity-0'); content.classList.remove('scale-95'); content.classList.add('scale-100'); }, 10);
+            },
+            closeClearModal: () => {
+                const backdrop = document.getElementById('clear-modal-backdrop'); const content = document.getElementById('clear-modal-content');
+                backdrop.classList.add('opacity-0'); content.classList.remove('scale-100'); content.classList.add('scale-95'); setTimeout(() => { backdrop.classList.add('hidden'); }, 200);
+            },
+            confirmClear: () => { state.tables = []; state.relations = []; app.saveState(); app.renderAll(); app.closeClearModal(); app.showToast('Board cleared'); },
+            addTable: () => {
+                const input = document.getElementById('new-table-name'); const rawName = input.value; if (!rawName.trim()) return;
+                const name = app.formatName(rawName);
+                if (state.tables.find(t => t.name === name)) { alert('Table name exists'); return; }
+                const newTable = { id: app.generateId(), name, x: -state.view.x + 200, y: -state.view.y + 200, color: CONSTANTS.COLORS[state.tables.length % CONSTANTS.COLORS.length], activeTab: 'fields', fields: [ { id: app.generateId(), name: 'id', type: 'BIGINT', isPk: true, isNullable: false } ] };
+                state.tables.push(newTable); app.saveState(); input.value = ''; app.closeModal(); app.renderAll();
+            },
+            deleteTable: (id) => { if(!confirm('Delete table?')) return; state.tables = state.tables.filter(t => t.id !== id); state.relations = state.relations.filter(r => r.fromTableId !== id && r.toTableId !== id); app.saveState(); app.renderAll(); },
+            enableRename: (tableId) => { state.ui.renamingTableId = tableId; app.renderTable(state.tables.find(t => t.id === tableId)); },
+            finishRename: (tableId, newName) => {
+                if(!newName.trim()) { state.ui.renamingTableId = null; app.renderTable(state.tables.find(t => t.id === tableId)); return; }
+                const table = state.tables.find(t => t.id === tableId);
+                if(table) { table.name = app.formatName(newName); app.saveState(); }
+                state.ui.renamingTableId = null; app.renderTable(table);
+            },
+            addField: (tableId) => {
+                const table = state.tables.find(t => t.id === tableId);
+                if (table) { table.fields.push({ id: app.generateId(), name: 'new_field', type: 'VARCHAR', isPk: false, isNullable: true, enumValues: '' }); app.saveState(); app.renderTable(table); app.updateStats(); }
+            },
+            removeField: (tableId, fieldId) => {
+                const table = state.tables.find(t => t.id === tableId);
+                if (table) {
+                    const initialRelCount = state.relations.length; state.relations = state.relations.filter(r => r.fkFieldId !== fieldId);
+                    if (state.relations.length !== initialRelCount) { app.drawConnections(); app.updateStats(); }
+                    table.fields = table.fields.filter(f => f.id !== fieldId); app.saveState(); app.renderTable(table);
+                }
+            },
+            updateField: (tableId, fieldId, key, value) => {
+                const table = state.tables.find(t => t.id === tableId); const field = table.fields.find(f => f.id === fieldId);
+                if (field) {
+                    field[key] = key === 'name' ? app.formatName(value) : value;
+                    if (key === 'name' || key === 'type') {
+                        if (field.type === 'foreignId' || field.name.endsWith('_id')) {
+                            const possibleTableName = field.name.endsWith('_id') ? field.name.slice(0, -3) + 's' : null;
+                            const targetTable = state.tables.find(t => t.name === possibleTableName || t.name === field.name.slice(0, -3));
+                            if (targetTable && targetTable.id !== table.id) {
+                                const exists = state.relations.find(r => r.fromTableId === targetTable.id && r.toTableId === table.id && r.fkFieldId === field.id);
+                                if (!exists) {
+                                    state.relations.push({ id: app.generateId(), fromTableId: targetTable.id, toTableId: table.id, type: '1:n', fkFieldId: field.id });
+                                    field.isFk = true; app.drawConnections(); app.updateStats();
+                                }
+                            }
+                        }
+                    }
+                    if (key === 'type') app.renderTable(table); app.saveState();
+                }
+            },
+            addEnumVal: (tableId, fieldId, value) => {
+                if (!value.trim()) return; const table = state.tables.find(t => t.id === tableId); const field = table.fields.find(f => f.id === fieldId);
+                if (field) {
+                    let raw = field.enumValues ? field.enumValues.split(',') : []; let clean = raw.map(v => v.trim().replace(/^['"]|['"]$/g, '')).filter(v => v);
+                    if (!clean.includes(value.trim())) clean.push(value.trim()); field.enumValues = clean.map(v => `'${v}'`).join(',');
+                    app.saveState(); app.renderTable(table);
+                    setTimeout(() => { const el = document.getElementById(tableId); if(el) { const input = el.querySelector(`input[data-enum-input="${fieldId}"]`); if(input) input.focus(); } }, 0);
+                }
+            },
+            removeEnumVal: (tableId, fieldId, valueToRemove) => {
+                const table = state.tables.find(t => t.id === tableId); const field = table.fields.find(f => f.id === fieldId);
+                if (field) {
+                    let raw = field.enumValues ? field.enumValues.split(',') : []; let clean = raw.map(v => v.trim().replace(/^['"]|['"]$/g, '')).filter(v => v);
+                    clean = clean.filter(v => v !== valueToRemove); field.enumValues = clean.map(v => `'${v}'`).join(',');
+                    app.saveState(); app.renderTable(table);
+                }
+            },
+            setTab: (tableId, tabName) => { 
+                const table = state.tables.find(t => t.id === tableId); 
+                if(table) { 
+                    table.activeTab = tabName; 
+                    app.saveState(); 
+                    if(state.ui.activeView === 'board') {
+                        app.renderTable(table); 
+                    } else if (state.ui.activeView === 'list') {
+                        app.renderListCard(table);
+                    }
+                    // Tree view doesn't have tabs currently
+                } 
+            },
+            toggleRelationType: (relationId) => { const relation = state.relations.find(r => r.id === relationId); if (relation) { relation.type = relation.type === '1:n' ? '1:1' : '1:n'; app.saveState(); app.drawConnections(); } },
+            deleteRelation: (relId) => {
+                if(!confirm('Remove relation?')) return; const rel = state.relations.find(r => r.id === relId);
+                if (rel) { const table = state.tables.find(t => t.id === rel.toTableId); if (table) { const field = table.fields.find(f => f.id === rel.fkFieldId); if (field) { field.isFk = false; app.renderTable(table); } } }
+                state.relations = state.relations.filter(r => r.id !== relId); app.saveState(); app.drawConnections(); app.updateStats();
+            },
+            autoLayout: () => {
+                const spacingX = 420; const spacingY = 50;
+                const getTableHeight = (t) => 100 + (t.fields.length * 35);
+                const adj = {}; const revAdj = {};
+                state.tables.forEach(t => { adj[t.id] = []; revAdj[t.id] = []; });
+                state.relations.forEach(r => { if(adj[r.fromTableId]) adj[r.fromTableId].push(r.toTableId); if(revAdj[r.toTableId]) revAdj[r.toTableId].push(r.fromTableId); });
+                const nodeLevels = {}; state.tables.forEach(t => nodeLevels[t.id] = 0);
+                let changed = true; let iterations = 0;
+                while(changed && iterations < state.tables.length + 2) {
+                    changed = false;
+                    state.relations.forEach(r => { if (nodeLevels[r.toTableId] < nodeLevels[r.fromTableId] + 1) { nodeLevels[r.toTableId] = nodeLevels[r.fromTableId] + 1; changed = true; } });
+                    iterations++;
+                }
+                const levelGroups = []; Object.entries(nodeLevels).forEach(([id, lvl]) => { if (!levelGroups[lvl]) levelGroups[lvl] = []; levelGroups[lvl].push(id); });
+                const finalPositions = {}; const occupied = {};
+                state.tables.forEach(t => { finalPositions[t.id] = { x: (nodeLevels[t.id] || 0) * spacingX + 50, y: 0 }; });
+                const maxLevel = levelGroups.length - 1;
+                for (let l = 0; l <= maxLevel; l++) {
+                    if (!levelGroups[l]) continue; occupied[l] = [];
+                    if (l > 0) {
+                        levelGroups[l].sort((aId, bId) => {
+                            const getAvgParentY = (nodeId) => {
+                                const parents = revAdj[nodeId]; if (parents.length === 0) return 0;
+                                const sum = parents.reduce((acc, pid) => { const pPos = finalPositions[pid]; const pTable = state.tables.find(pt => pt.id === pid); return acc + pPos.y + (getTableHeight(pTable) / 2); }, 0);
+                                return sum / parents.length;
+                            };
+                            return getAvgParentY(aId) - getAvgParentY(bId);
+                        });
+                    }
+                    levelGroups[l].forEach(tId => {
+                        const table = state.tables.find(t => t.id === tId); const height = getTableHeight(table);
+                        let desiredCenterY = 0; const parents = revAdj[tId];
+                        if (parents.length > 0) {
+                            const parentCenters = parents.map(p => { const pPos = finalPositions[p]; const pTable = state.tables.find(pt => pt.id === p); return pPos.y + (getTableHeight(pTable) / 2); });
+                            desiredCenterY = parentCenters.reduce((a,b)=>a+b,0) / parentCenters.length;
+                        } else { desiredCenterY = 100; }
+                        let desiredTop = desiredCenterY - (height / 2); let safeTop = desiredTop;
+                        if (occupied[l].length > 0) { const previousItem = occupied[l][occupied[l].length - 1]; if (safeTop < previousItem.bottom + spacingY) { safeTop = previousItem.bottom + spacingY; } }
+                        if (safeTop < 50) safeTop = 50; finalPositions[tId].y = safeTop; occupied[l].push({ top: safeTop, bottom: safeTop + height });
+                    });
+                }
+                state.tables.forEach(t => { if (finalPositions[t.id]) { t.x = finalPositions[t.id].x; t.y = finalPositions[t.id].y; } });
+                state.view.x = 50; state.view.y = 50; app.saveState(); app.updateCanvasTransform(); app.renderAll(); 
+            },
+            dragFieldStart: (e, tableId, index) => { e.stopPropagation(); state.ui.draggingField = { tableId, index }; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', JSON.stringify({ tableId, index })); requestAnimationFrame(() => { const row = e.target.closest('.field-row-container'); if (row) row.classList.add('dragging-row'); }); },
+            dragFieldEnd: (e, tableId) => { document.querySelectorAll('.dragging-row').forEach(el => el.classList.remove('dragging-row')); state.ui.draggingField = null; },
+            dragFieldOver: (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; },
+            dropField: (e, targetTableId, targetIndex) => {
+                e.stopPropagation(); e.preventDefault(); const source = state.ui.draggingField; if (!source) return;
+                const sourceTable = state.tables.find(t => t.id === source.tableId); const targetTable = state.tables.find(t => t.id === targetTableId); if (!sourceTable || !targetTable) return;
+                const [movedField] = sourceTable.fields.splice(source.index, 1);
+                if (typeof targetIndex !== 'undefined') { targetTable.fields.splice(targetIndex, 0, movedField); } else { targetTable.fields.push(movedField); }
+                app.saveState(); app.renderTable(sourceTable); if (source.tableId !== targetTableId) { app.renderTable(targetTable); } state.ui.draggingField = null;
+            },
+            dropFieldOnContainer: (e, targetTableId) => { e.preventDefault(); app.dropField(e, targetTableId); },
+            updateCanvasTransform: () => { const world = document.getElementById('canvas-world'); const container = document.getElementById('canvas-container'); world.style.transform = `translate(${state.view.x}px, ${state.view.y}px) scale(${state.view.scale})`; const gridSize = 20 * state.view.scale; container.style.backgroundSize = `${gridSize}px ${gridSize}px`; container.style.backgroundPosition = `${state.view.x}px ${state.view.y}px`; },
+            resetView: () => { state.view = { x: 0, y: 0, scale: 1 }; app.saveState(); app.updateCanvasTransform(); },
+            zoomIn: () => { state.view.scale = Math.min(state.view.scale * 1.2, 3); app.saveState(); app.updateCanvasTransform(); },
+            zoomOut: () => { state.view.scale = Math.max(state.view.scale * 0.8, 0.2); app.saveState(); app.updateCanvasTransform(); },
+            openModal: () => { const backdrop = document.getElementById('modal-backdrop'); const content = document.getElementById('modal-content'); backdrop.classList.remove('hidden'); setTimeout(() => { backdrop.classList.remove('opacity-0'); content.classList.remove('scale-95'); content.classList.add('scale-100'); }, 10); document.getElementById('new-table-name').focus(); },
+            closeModal: () => { const backdrop = document.getElementById('modal-backdrop'); const content = document.getElementById('modal-content'); backdrop.classList.add('opacity-0'); content.classList.remove('scale-100'); content.classList.add('scale-95'); setTimeout(() => { backdrop.classList.add('hidden'); }, 200); },
+            startConnectionDrag: (e, id) => { e.stopPropagation(); e.preventDefault(); state.ui.connectingFrom = id; app.updateUI(); },
+            cancelConnection: () => { state.ui.connectingFrom = null; app.updateUI(); },
+            completeConnection: (targetId) => {
+                const sourceId = state.ui.connectingFrom; if (!sourceId || sourceId === targetId) return;
+                const exists = state.relations.find(r => r.fromTableId === sourceId && r.toTableId === targetId); if (exists) { app.cancelConnection(); return; }
+                const sourceTable = state.tables.find(t => t.id === sourceId); const targetTable = state.tables.find(t => t.id === targetId);
+                const fieldName = `${app.getSingular(sourceTable.name)}_id`; let field = targetTable.fields.find(f => f.name === fieldName); let fieldId;
+                if (!field) { fieldId = app.generateId(); targetTable.fields.push({ id: fieldId, name: fieldName, type: 'foreignId', isPk: false, isNullable: true, isFk: true }); app.renderTable(targetTable); } else { fieldId = field.id; if(!field.isFk) { field.isFk = true; app.renderTable(targetTable); } }
+                state.relations.push({ id: app.generateId(), fromTableId: sourceId, toTableId: targetId, type: '1:n', fkFieldId: fieldId });
+                app.saveState(); app.cancelConnection(); app.drawConnections(); 
+            },
+            updateStats: () => { document.getElementById('stats-display').innerHTML = `<b>${state.tables.length}</b> tables &bull; <b>${state.relations.length}</b> relations`; },
+            updateUI: () => {
+                const feedback = document.getElementById('connection-feedback');
+                if (state.ui.connectingFrom) {
+                    feedback.classList.remove('hidden'); document.querySelectorAll('.table-card').forEach(el => el.classList.remove('ring-4', 'ring-indigo-300')); document.getElementById(state.ui.connectingFrom)?.classList.add('ring-4', 'ring-indigo-300');
+                } else { feedback.classList.add('hidden'); document.querySelectorAll('.table-card').forEach(el => el.classList.remove('ring-4', 'ring-indigo-300')); }
+                app.drawConnections();
+            },
+            getAnchorPoint: (tableId, fieldId, side) => {
+                const tableEl = document.getElementById(tableId); if (!tableEl) return { x: 0, y: 0 }; 
+                let targetEl = null; if (fieldId) { targetEl = tableEl.querySelector(`[data-field-id="${fieldId}"]`); } if (!targetEl) { targetEl = tableEl.querySelector('.table-header'); }
+                if (!targetEl) return { x: 0, y: 0 }; const rect = targetEl.getBoundingClientRect(); const container = document.getElementById('canvas-container').getBoundingClientRect();
+                const centerY = (rect.top + rect.height / 2 - container.top - state.view.y) / state.view.scale;
+                const x = side === 'left' ? (rect.left - container.left - state.view.x) / state.view.scale : (rect.right - container.left - state.view.x) / state.view.scale;
+                return { x, y: centerY };
+            },
+            calculateSmartPath: (x1, y1, s1, x2, y2, s2) => {
+                const stub = 20; const sx1 = s1 === 'right' ? x1 + stub : x1 - stub; const sx2 = s2 === 'right' ? x2 + stub : x2 - stub;
+                const dx = Math.abs(sx2 - sx1); const controlX = Math.max(dx * 0.5, 60); 
+                const cx1 = s1 === 'right' ? sx1 + controlX : sx1 - controlX; const cx2 = s2 === 'right' ? sx2 + controlX : sx2 - controlX;
+                return `M ${x1} ${y1} L ${sx1} ${y1} C ${cx1} ${y1}, ${cx2} ${y2}, ${sx2} ${y2} L ${x2} ${y2}`;
+            },
+            calculateBezierMidpoint: (x1, y1, cx1, cy1, cx2, cy2, x2, y2) => {
+                const t = 0.5; const mt = 1 - t; const mt2 = mt * mt; const mt3 = mt2 * mt; const t2 = t * t; const t3 = t2 * t;
+                const x = (mt3 * x1) + (3 * mt2 * t * cx1) + (3 * mt * t2 * cx2) + (t3 * x2); const y = (mt3 * y1) + (3 * mt2 * t * cy1) + (3 * mt * t2 * cy2) + (t3 * y2);
+                return { x, y };
+            },
+            drawConnections: () => {
+                const svg = document.getElementById('connections-layer'); const labelsLayer = document.getElementById('labels-layer');
+                let svgHtml = `<defs> <marker id="marker-one" markerWidth="12" markerHeight="12" refX="0" refY="6" orient="auto"><path d="M0,0 L0,12 M4,6" stroke="#94a3b8" stroke-width="2" fill="none"/></marker> <marker id="marker-many" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M0,6 L10,6 M10,6 L0,0 M10,6 L0,12" stroke="#94a3b8" stroke-width="2" fill="none"/></marker> <marker id="marker-one-end" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M10,0 L10,12 M0,6 L10,6" stroke="#94a3b8" stroke-width="2" fill="none"/></marker> <marker id="marker-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10" fill="#6366f1" /></marker> </defs>`;
+                let labelsHtml = '';
+                state.relations.forEach(rel => {
+                    const fromT = state.tables.find(t => t.id === rel.fromTableId); const toT = state.tables.find(t => t.id === rel.toTableId);
+                    if (fromT && toT) {
+                        const c1 = { x: fromT.x + 144, y: fromT.y }; const c2 = { x: toT.x + 144, y: toT.y };
+                        let startSide = 'right'; let endSide = 'left'; if (c2.x < c1.x) { startSide = 'left'; endSide = 'right'; }
+                        const pkField = fromT.fields.find(f => f.isPk);
+                        const start = app.getAnchorPoint(fromT.id, pkField?.id, startSide); const end = app.getAnchorPoint(toT.id, rel.fkFieldId, endSide);
+                        const pathD = app.calculateSmartPath(start.x, start.y, startSide, end.x, end.y, endSide);
+                        const markerStart = "url(#marker-one)"; const markerEnd = rel.type === '1:1' ? "url(#marker-one-end)" : "url(#marker-many)";
+                        svgHtml += `<path d="${pathD}" stroke="#94a3b8" stroke-width="2" fill="none" class="connection-line" marker-start="${markerStart}" marker-end="${markerEnd}" />`;
+                        const stub = 20; const sx1 = startSide === 'right' ? start.x + stub : start.x - stub; const sx2 = endSide === 'right' ? end.x + stub : end.x - stub;
+                        const dx = Math.abs(sx2 - sx1); const controlX = Math.max(dx * 0.5, 60); const cx1 = startSide === 'right' ? sx1 + controlX : sx1 - controlX; const cx2 = endSide === 'right' ? sx2 + controlX : sx2 - controlX;
+                        const mid = app.calculateBezierMidpoint(sx1, start.y, cx1, start.y, cx2, end.y, sx2, end.y); const badgeColor = rel.type === '1:1' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-blue-100 text-blue-700 border-blue-200';
+                        labelsHtml += `<div class="relation-badge absolute flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full border shadow-sm ${badgeColor} select-none pointer-events-auto" style="left: ${mid.x}px; top: ${mid.y}px; transform: translate(-50%, -50%);"> <span onclick="app.toggleRelationType('${rel.id}')" title="Toggle Type">${rel.type === '1:1' ? '1:1' : '1:N'}</span> <span onclick="app.deleteRelation('${rel.id}')" class="hover:text-red-600 cursor-pointer" title="Remove Relation">&times;</span> </div>`;
+                    }
+                });
+                if (state.ui.connectingFrom) {
+                    const fromT = state.tables.find(t => t.id === state.ui.connectingFrom);
+                    if (fromT) {
+                        const pathD = `M ${fromT.x + 280} ${fromT.y + 20} L ${state.ui.mousePos.x} ${state.ui.mousePos.y}`;
+                        svgHtml += `<path d="${pathD}" stroke="#6366f1" stroke-width="2" fill="none" class="connection-line-active" marker-end="url(#marker-arrow)" />`;
+                    }
+                }
+                svg.innerHTML = svgHtml; labelsLayer.innerHTML = labelsHtml;
+            },
+            renderAll: () => {
+                const layer = document.getElementById('nodes-layer'); layer.innerHTML = '';
+                state.tables.forEach(table => {
+                    const div = document.createElement('div'); div.id = table.id;
+                    div.className = `table-card absolute flex flex-col w-72 bg-white rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-slate-200 transition-all hover:shadow-[0_20px_40px_rgb(0,0,0,0.2)] hover:-translate-y-1`;
+                    div.style.left = `${table.x}px`; div.style.top = `${table.y}px`;
+                    layer.appendChild(div); app.renderTable(table);
+                });
+                app.updateStats(); app.drawConnections();
+            },
+            renderTable: (table) => {
+                const el = document.getElementById(table.id); if (!el) return;
+                const baseColor = table.color.split('-')[1]; const headerBg = `bg-${baseColor}-600`;
+                let titleContent = `<div class="font-bold text-white text-sm pointer-events-auto cursor-text truncate tracking-wide" ondblclick="app.enableRename('${table.id}')" title="Double click to rename">${table.name}</div>`;
+                if (state.ui.renamingTableId === table.id) {
+                    titleContent = `<input type="text" value="${table.name}" class="w-full bg-white/10 text-white placeholder-white/50 border border-white/30 rounded px-1.5 py-0.5 text-sm font-bold outline-none focus:bg-white/20 focus:border-white" onblur="app.finishRename('${table.id}', this.value)" onkeydown="if(event.key === 'Enter') app.finishRename('${table.id}', this.value)" autoFocus >`;
+                    setTimeout(() => { const input = el.querySelector('input[type="text"]'); if(input) { input.focus(); input.select(); } }, 10);
+                }
+                const headerHtml = `<div class="table-header flex items-center justify-between p-3 ${headerBg} cursor-grab active:cursor-grabbing rounded-t-xl select-none group relative overflow-hidden" onmousedown="app.startDragTable(event, '${table.id}')"> <div class="absolute inset-0 bg-gradient-to-tr from-black/5 to-transparent pointer-events-none"></div> <div class="flex items-center gap-2 flex-1 mr-2 relative z-10"> <i data-lucide="table-2" class="w-4 h-4 text-white/70"></i> ${titleContent} </div> <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity relative z-10"> <button onmousedown="app.startConnectionDrag(event, '${table.id}')" class="p-1.5 rounded bg-white/10 hover:bg-white/20 text-white/90 transition-colors backdrop-blur-sm shadow-sm" title="Drag to Connect"> <i data-lucide="link" class="w-3 h-3"></i> </button> <button onclick="event.stopPropagation(); app.deleteTable('${table.id}')" class="p-1.5 rounded bg-white/10 hover:bg-rose-500 text-white/90 hover:text-white transition-colors backdrop-blur-sm shadow-sm" title="Delete Table"> <i data-lucide="trash-2" class="w-3 h-3"></i> </button> </div> </div>`;
+                const tabsHtml = `<div class="flex text-[11px] font-semibold border-b border-slate-100 bg-white"> <button onclick="app.setTab('${table.id}', 'fields')" class="flex-1 py-2.5 text-center transition-colors relative ${table.activeTab === 'fields' ? `text-${baseColor}-600 bg-${baseColor}-50/50` : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}"> Structure ${table.activeTab === 'fields' ? `<span class="absolute bottom-0 left-0 w-full h-[2px] bg-${baseColor}-600"></span>` : ''} </button> <button onclick="app.setTab('${table.id}', 'sql')" class="flex-1 py-2.5 text-center transition-colors relative ${table.activeTab === 'sql' ? `text-${baseColor}-600 bg-${baseColor}-50/50` : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}"> SQL ${table.activeTab === 'sql' ? `<span class="absolute bottom-0 left-0 w-full h-[2px] bg-${baseColor}-600"></span>` : ''} </button> <button onclick="app.setTab('${table.id}', 'laravel')" class="flex-1 py-2.5 text-center transition-colors relative ${table.activeTab === 'laravel' ? `text-${baseColor}-600 bg-${baseColor}-50/50` : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}"> Laravel ${table.activeTab === 'laravel' ? `<span class="absolute bottom-0 left-0 w-full h-[2px] bg-${baseColor}-600"></span>` : ''} </button> </div>`;
+                let contentHtml = '';
+                if (table.activeTab === 'fields') {
+                    const fieldsHtml = table.fields.map((f, index) => {
+                        let enumHtml = '';
+                        if (f.type === 'ENUM') {
+                            const raw = f.enumValues ? f.enumValues.split(',') : []; const tags = raw.map(v => v.trim().replace(/^['"]|['"]$/g, '')).filter(v => v);
+                            enumHtml = `<div class="pl-8 pr-2 pb-2 flex flex-wrap gap-1 items-center mt-1"> ${tags.map(tag => `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10px] border border-slate-200 font-medium group/tag"> ${tag} <button onclick="app.removeEnumVal('${table.id}', '${f.id}', '${tag}')" onmousedown="event.stopPropagation()" class="hover:text-rose-500 flex items-center justify-center w-3 h-3 rounded-full hover:bg-slate-200 text-xs font-bold leading-none transition-colors">&times;</button> </span>`).join('')} <input type="text" data-enum-input="${f.id}" placeholder="+ value" onkeydown="if(event.key === 'Enter') { app.addEnumVal('${table.id}', '${f.id}', this.value); }" onmousedown="event.stopPropagation()" class="flex-1 min-w-[50px] bg-transparent text-[10px] px-1.5 py-0.5 rounded border border-dashed border-slate-300 hover:border-${baseColor}-400 focus:border-${baseColor}-500 outline-none text-slate-600 placeholder:text-slate-400 transition-colors" > </div>`;
+                        }
+                        return `<div draggable="true" data-field-id="${f.id}" ondragstart="app.dragFieldStart(event, '${table.id}', ${index})" ondragover="app.dragFieldOver(event)" ondrop="app.dropField(event, '${table.id}', ${index})" ondragend="app.dragFieldEnd(event, '${table.id}')" class="field-row-container group flex flex-col relative transition-all border-b border-slate-50 last:border-0 hover:bg-slate-50/80"> <div class="flex items-center gap-2 p-2"> <div class="cursor-move text-slate-300 hover:text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity"> <i data-lucide="grip-vertical" class="w-3 h-3"></i> </div> <div class="w-5 flex justify-center shrink-0"> ${f.isPk ? `<i data-lucide="key" class="w-3.5 h-3.5 text-amber-500 fill-amber-500/20" title="Primary Key"></i>` : ''} ${f.isFk ? `<i data-lucide="link-2" class="w-3.5 h-3.5 text-blue-500" title="Foreign Key"></i>` : ''} ${!f.isPk && !f.isFk ? `<div class="w-1.5 h-1.5 rounded-full bg-slate-200"></div>` : ''} </div> <input type="text" value="${f.name}" onmousedown="event.stopPropagation()" onchange="app.updateField('${table.id}', '${f.id}', 'name', this.value)" class="flex-1 bg-transparent outline-none font-mono text-[13px] text-slate-700 min-w-0 placeholder:text-slate-300 focus:text-${baseColor}-600 font-medium transition-colors"> <div class="relative group/select"> <select onmousedown="event.stopPropagation()" onchange="app.updateField('${table.id}', '${f.id}', 'type', this.value)" class="appearance-none bg-slate-100 hover:bg-slate-200 text-[10px] text-slate-600 font-bold py-1 px-2 pr-6 rounded-md outline-none cursor-pointer transition-colors border border-transparent focus:border-${baseColor}-300 uppercase tracking-wide"> ${CONSTANTS.DATA_TYPES.map(t => `<option value="${t}" ${f.type === t ? 'selected' : ''}>${t}</option>`).join('')} </select> <i data-lucide="chevron-down" class="absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none"></i> </div> <button onmousedown="event.stopPropagation()" onclick="app.toggleFieldProp('${table.id}', '${f.id}', 'isNullable')" class="px-1.5 py-0.5 rounded text-[9px] font-bold border transition-colors ${f.isNullable ? 'bg-indigo-100 text-indigo-600 border-indigo-200' : 'bg-transparent text-slate-300 border-transparent hover:bg-slate-100 hover:text-slate-50'}" title="Toggle Nullable" ${f.isPk ? 'disabled style="opacity:0.3"' : ''}>N</button> <button onmousedown="event.stopPropagation()" onclick="app.removeField('${table.id}', '${f.id}')" class="opacity-0 group-hover:opacity-100 p-1 text-slate-300 hover:text-rose-500 transition-colors"> <i data-lucide="x" class="w-3.5 h-3.5"></i> </button> </div> ${enumHtml} </div>`;
+                    }).join('');
+                    contentHtml = `<div class="flex flex-col py-1 bg-white min-h-[50px] rounded-b-xl" ondragover="app.dragFieldOver(event)" ondrop="app.dropFieldOnContainer(event, '${table.id}')"> ${fieldsHtml} <div class="px-2 pt-2 pb-2"> <button onclick="app.addField('${table.id}')" class="w-full flex items-center justify-center gap-2 text-xs font-semibold text-slate-400 hover:text-${baseColor}-600 hover:bg-${baseColor}-50 p-2 rounded-lg transition-all border border-dashed border-slate-200 hover:border-${baseColor}-200"> <i data-lucide="plus" class="w-3.5 h-3.5"></i> <span>Add Field</span> </button> </div> </div>`;
+                } else if (table.activeTab === 'sql') {
+                    contentHtml = `<div class="p-0 bg-slate-50/50 rounded-b-xl overflow-hidden h-full flex flex-col"> <div class="overflow-auto max-h-64 p-3 custom-scrollbar"> <pre class="code-block text-slate-600 text-xs">${generators.sql(table)}</pre> </div> <div class="p-2 border-t border-slate-100 bg-white"> <button onclick="app.copyToClipboard(generators.sql(state.tables.find(t=>t.id=='${table.id}')))" class="w-full flex items-center justify-center gap-2 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-600 py-2 rounded-lg transition-colors"> <i data-lucide="copy" class="w-3 h-3"></i> Copy SQL </button> </div> </div>`;
+                } else if (table.activeTab === 'laravel') {
+                    contentHtml = `<div class="p-0 bg-slate-50/50 rounded-b-xl overflow-hidden h-full flex flex-col"> <div class="overflow-auto max-h-64 p-3 custom-scrollbar"> <pre class="code-block text-indigo-600 text-xs">${generators.laravel(table)}</pre> </div> <div class="p-2 border-t border-slate-100 bg-white"> <button onclick="app.copyToClipboard(generators.laravel(state.tables.find(t=>t.id=='${table.id}')))" class="w-full flex items-center justify-center gap-2 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-600 py-2 rounded-lg transition-colors"> <i data-lucide="copy" class="w-3 h-3"></i> Copy Migration </button> </div> </div>`;
+                }
+                el.innerHTML = headerHtml + tabsHtml + contentHtml;
+                lucide.createIcons({ root: el });
+                el.onmouseup = (e) => { if (state.ui.connectingFrom && state.ui.connectingFrom !== table.id) { e.stopPropagation(); app.completeConnection(table.id); } };
+            },
+            toggleFieldProp: (tableId, fieldId, prop) => {
+                const table = state.tables.find(t => t.id === tableId);
+                const field = table.fields.find(f => f.id === fieldId);
+                if (field) {
+                    if (prop === 'isNullable' && field.isPk) return;
+                    field[prop] = !field[prop];
+                    app.saveState();
+                    if (state.ui.activeView === 'board') app.renderTable(table);
+                    else app.renderListCard(table);
+                }
+            },
+            startDragTable: (e, id) => { if(e.target.closest('button') || e.target.closest('input') || e.target.closest('select')) return; e.preventDefault(); e.stopPropagation(); const table = state.tables.find(t => t.id === id); state.ui.draggingTable = { id: id, offsetX: e.clientX - (table.x * state.view.scale) - state.view.x, offsetY: e.clientY - (table.y * state.view.scale) - state.view.y }; },
+            attachListeners: () => {
+                const canvas = document.getElementById('canvas-container');
+                canvas.addEventListener('mousedown', (e) => { if (e.target === canvas || e.target.id === 'connections-layer' || e.target.id === 'nodes-layer' || e.target.id === 'labels-layer') { state.ui.isDraggingCanvas = true; state.ui.dragStart = { x: e.clientX - state.view.x, y: e.clientY - state.view.y }; canvas.style.cursor = 'grabbing'; } });
+                window.addEventListener('mousemove', (e) => {
+                    const rect = canvas.getBoundingClientRect(); state.ui.mousePos = { x: (e.clientX - rect.left - state.view.x) / state.view.scale, y: (e.clientY - rect.top - state.view.y) / state.view.scale };
+                    if (state.ui.isDraggingCanvas) { state.view.x = e.clientX - state.ui.dragStart.x; state.view.y = e.clientY - state.ui.dragStart.y; app.updateCanvasTransform(); }
+                    if (state.ui.draggingTable) { const tId = state.ui.draggingTable.id; const table = state.tables.find(t => t.id === tId); table.x = (e.clientX - state.ui.draggingTable.offsetX - state.view.x) / state.view.scale; table.y = (e.clientY - state.ui.draggingTable.offsetY - state.view.y) / state.view.scale; const el = document.getElementById(tId); if(el) { el.style.left = `${table.x}px`; el.style.top = `${table.y}px`; } app.drawConnections(); }
+                    if (state.ui.connectingFrom) { app.drawConnections(); }
+                });
+                window.addEventListener('mouseup', () => { if (state.ui.isDraggingCanvas) { app.saveState(); } if (state.ui.draggingTable) { app.saveState(); } state.ui.isDraggingCanvas = false; state.ui.draggingTable = null; canvas.style.cursor = 'grab'; if (state.ui.connectingFrom) { app.cancelConnection(); } });
+                canvas.addEventListener('wheel', (e) => { if (e.ctrlKey || e.metaKey) { e.preventDefault(); const s = e.deltaY > 0 ? 0.9 : 1.1; state.view.scale = Math.min(Math.max(0.2, state.view.scale * s), 3); app.updateCanvasTransform(); app.saveState(); } }, { passive: false });
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', app.init);
+
+    </script>
+</body>
+</html>
