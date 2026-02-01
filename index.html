@@ -176,17 +176,52 @@
         </div>
     </div>
 
-    <!-- UI Layer: Top Right View Toggle -->
-    <div class="absolute top-4 right-4 z-50 bg-white p-1 rounded-lg shadow-md border border-slate-200 flex text-sm font-medium">
-        <button onclick="app.switchView('board')" id="btn-view-board" class="px-3 py-1.5 rounded-md bg-indigo-50 text-indigo-600 shadow-sm transition-all flex items-center gap-2">
-            <i data-lucide="layout-grid" class="w-4 h-4"></i> Board
-        </button>
-        <button onclick="app.switchView('list')" id="btn-view-list" class="px-3 py-1.5 rounded-md text-slate-500 hover:bg-slate-50 transition-all flex items-center gap-2">
-            <i data-lucide="list" class="w-4 h-4"></i> List
-        </button>
-        <button onclick="app.switchView('tree')" id="btn-view-tree" class="px-3 py-1.5 rounded-md text-slate-500 hover:bg-slate-50 transition-all flex items-center gap-2">
-            <i data-lucide="network" class="w-4 h-4"></i> Tree
-        </button>
+    <!-- UI Layer: Top Right View Toggle and Search -->
+    <div class="absolute top-4 right-4 z-50 flex items-center gap-3">
+        <!-- Search Bar -->
+        <div class="relative">
+            <div class="relative">
+                <input 
+                    type="text" 
+                    id="table-search" 
+                    placeholder="Search tables..." 
+                    oninput="app.handleSearch(this.value)"
+                    onfocus="app.showSearchSuggestions()"
+                    onblur="setTimeout(() => app.hideSearchSuggestions(), 200)"
+                    class="w-64 px-3 py-1.5 pl-9 pr-8 text-sm bg-white border border-slate-200 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                >
+                <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+                <button 
+                    onclick="app.clearSearch()" 
+                    id="clear-search-btn"
+                    class="hidden absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+                >
+                    <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                </button>
+            </div>
+            <!-- Search Suggestions Dropdown -->
+            <div 
+                id="search-suggestions" 
+                class="hidden absolute top-full mt-2 w-full bg-white border border-slate-200 rounded-lg shadow-xl max-h-80 overflow-y-auto z-50"
+            >
+                <div id="suggestions-list" class="py-1">
+                    <!-- Suggestions will be populated here -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- View Toggle -->
+        <div class="bg-white p-1 rounded-lg shadow-md border border-slate-200 flex text-sm font-medium">
+            <button onclick="app.switchView('board')" id="btn-view-board" class="px-3 py-1.5 rounded-md bg-indigo-50 text-indigo-600 shadow-sm transition-all flex items-center gap-2">
+                <i data-lucide="layout-grid" class="w-4 h-4"></i> Board
+            </button>
+            <button onclick="app.switchView('list')" id="btn-view-list" class="px-3 py-1.5 rounded-md text-slate-500 hover:bg-slate-50 transition-all flex items-center gap-2">
+                <i data-lucide="list" class="w-4 h-4"></i> List
+            </button>
+            <button onclick="app.switchView('tree')" id="btn-view-tree" class="px-3 py-1.5 rounded-md text-slate-500 hover:bg-slate-50 transition-all flex items-center gap-2">
+                <i data-lucide="network" class="w-4 h-4"></i> Tree
+            </button>
+        </div>
     </div>
 
     <!-- UI Layer: Info -->
@@ -351,7 +386,9 @@
                 expandedNodes: new Set(), // stores paths like "rootId/childId"
                 animationFrameId: null,
                 selectedRelation: null,
-                sqlDialect: 'mysql' // 'mysql' | 'postgresql' | 'sqlite' | 'sqlserver'
+                sqlDialect: 'mysql', // 'mysql' | 'postgresql' | 'sqlite' | 'sqlserver'
+                searchQuery: '',
+                searchResults: []
             }
         };
 
@@ -659,6 +696,160 @@
                     tree.classList.remove('hidden');
                     app.renderTreeView();
                 }
+            },
+
+            // --- Search Functions ---
+            handleSearch: (query) => {
+                state.ui.searchQuery = query.toLowerCase().trim();
+                const clearBtn = document.getElementById('clear-search-btn');
+                
+                if (query.trim()) {
+                    clearBtn.classList.remove('hidden');
+                    app.updateSearchResults();
+                    app.showSearchSuggestions();
+                } else {
+                    clearBtn.classList.add('hidden');
+                    state.ui.searchResults = [];
+                    app.hideSearchSuggestions();
+                    app.clearSearchHighlights();
+                }
+            },
+            
+            updateSearchResults: () => {
+                const query = state.ui.searchQuery;
+                if (!query) {
+                    state.ui.searchResults = [];
+                    return;
+                }
+                
+                state.ui.searchResults = state.tables.filter(table => {
+                    // Search in table name
+                    if (table.name.toLowerCase().includes(query)) return true;
+                    
+                    // Search in field names
+                    if (table.fields.some(f => f.name.toLowerCase().includes(query))) return true;
+                    
+                    // Search in field types
+                    if (table.fields.some(f => f.type.toLowerCase().includes(query))) return true;
+                    
+                    return false;
+                }).map(table => ({
+                    table,
+                    matchedFields: table.fields.filter(f => 
+                        f.name.toLowerCase().includes(query) || 
+                        f.type.toLowerCase().includes(query)
+                    )
+                }));
+                
+                app.renderSearchSuggestions();
+            },
+            
+            renderSearchSuggestions: () => {
+                const container = document.getElementById('suggestions-list');
+                const results = state.ui.searchResults;
+                
+                if (results.length === 0) {
+                    container.innerHTML = '<div class="px-4 py-3 text-sm text-slate-500 italic">No tables found</div>';
+                    return;
+                }
+                
+                container.innerHTML = results.map(({ table, matchedFields }) => {
+                    const fieldMatches = matchedFields.length > 0 
+                        ? `<div class="mt-1 flex flex-wrap gap-1">${matchedFields.slice(0, 3).map(f => 
+                            `<span class="text-[10px] px-1.5 py-0.5 bg-indigo-50 text-indigo-600 rounded font-mono">${f.name}</span>`
+                          ).join('')}${matchedFields.length > 3 ? '<span class="text-[10px] text-slate-400">+' + (matchedFields.length - 3) + ' more</span>' : ''}</div>` 
+                        : '';
+                    
+                    return `
+                        <button 
+                            onclick="app.selectSearchResult('${table.id}')"
+                            class="w-full px-4 py-2 text-left hover:bg-indigo-50 transition-colors group"
+                        >
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="table-2" class="w-4 h-4 text-slate-400 group-hover:text-indigo-600"></i>
+                                    <span class="text-sm font-medium text-slate-700 group-hover:text-indigo-600">${table.name}</span>
+                                </div>
+                                <span class="text-xs text-slate-400">${table.fields.length} fields</span>
+                            </div>
+                            ${fieldMatches}
+                        </button>
+                    `;
+                }).join('');
+                
+                lucide.createIcons({ root: container });
+            },
+            
+            showSearchSuggestions: () => {
+                if (state.ui.searchResults.length > 0 || state.ui.searchQuery) {
+                    document.getElementById('search-suggestions').classList.remove('hidden');
+                }
+            },
+            
+            hideSearchSuggestions: () => {
+                document.getElementById('search-suggestions').classList.add('hidden');
+            },
+            
+            selectSearchResult: (tableId) => {
+                const table = state.tables.find(t => t.id === tableId);
+                if (!table) return;
+                
+                app.hideSearchSuggestions();
+                
+                if (state.ui.activeView === 'board') {
+                    // Center on the table
+                    const centerX = window.innerWidth / 2 - table.x * state.view.scale - 150;
+                    const centerY = window.innerHeight / 2 - table.y * state.view.scale - 200;
+                    state.view.x = centerX;
+                    state.view.y = centerY;
+                    app.updateCanvasTransform();
+                    
+                    // Highlight the table
+                    const el = document.getElementById(tableId);
+                    if (el) {
+                        el.classList.add('ring-4', 'ring-indigo-400');
+                        setTimeout(() => el.classList.remove('ring-4', 'ring-indigo-400'), 2000);
+                    }
+                } else if (state.ui.activeView === 'list') {
+                    // Scroll to the table in list view
+                    const el = document.getElementById(`list-card-${tableId}`);
+                    if (el) {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        el.classList.add('ring-4', 'ring-indigo-400');
+                        setTimeout(() => el.classList.remove('ring-4', 'ring-indigo-400'), 2000);
+                    }
+                } else if (state.ui.activeView === 'tree') {
+                    // Switch to board view and center on table
+                    app.switchView('board');
+                    setTimeout(() => {
+                        const centerX = window.innerWidth / 2 - table.x * state.view.scale - 150;
+                        const centerY = window.innerHeight / 2 - table.y * state.view.scale - 200;
+                        state.view.x = centerX;
+                        state.view.y = centerY;
+                        app.updateCanvasTransform();
+                        
+                        const el = document.getElementById(tableId);
+                        if (el) {
+                            el.classList.add('ring-4', 'ring-indigo-400');
+                            setTimeout(() => el.classList.remove('ring-4', 'ring-indigo-400'), 2000);
+                        }
+                    }, 100);
+                }
+            },
+            
+            clearSearch: () => {
+                document.getElementById('table-search').value = '';
+                state.ui.searchQuery = '';
+                state.ui.searchResults = [];
+                document.getElementById('clear-search-btn').classList.add('hidden');
+                app.hideSearchSuggestions();
+                app.clearSearchHighlights();
+            },
+            
+            clearSearchHighlights: () => {
+                document.querySelectorAll('.ring-4.ring-indigo-400').forEach(el => {
+                    el.classList.remove('ring-4', 'ring-indigo-400');
+                });
             },
 
             // --- Tree View Logic ---
