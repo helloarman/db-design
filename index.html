@@ -6,6 +6,8 @@
     <title>Database Design Workboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -156,6 +158,11 @@
             <button onclick="app.triggerImport()" class="p-3 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors group relative" title="Import JSON">
                 <i data-lucide="upload" class="w-6 h-6"></i>
                 <span class="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap">Import</span>
+            </button>
+
+            <button onclick="app.exportPDF()" class="p-3 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors group relative" title="Export PDF">
+                <i data-lucide="file-text" class="w-6 h-6 text-red-500"></i>
+                <span class="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap">Export PDF</span>
             </button>
 
             <div class="h-px bg-slate-200 my-1"></div>
@@ -1248,6 +1255,122 @@
                 const a = document.createElement('a'); a.href = url; a.download = `db-schema-${new Date().toISOString().slice(0,10)}.json`;
                 document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
                 app.showToast('Schema exported!');
+            },
+            exportPDF: () => {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                // Title
+                doc.setFontSize(20);
+                doc.setTextColor(79, 70, 229); // Indigo
+                doc.text('Database Schema', 14, 20);
+                
+                doc.setFontSize(10);
+                doc.setTextColor(100, 116, 139); // Slate
+                doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 28);
+                doc.text(`Total Tables: ${state.tables.length} | Total Relations: ${state.relations.length}`, 14, 34);
+                
+                let yPos = 45;
+                
+                // Organize tables by level
+                const tableLevelMap = {};
+                state.tables.forEach(t => tableLevelMap[t.id] = 0);
+                let changed = true;
+                let iterations = 0;
+                while(changed && iterations < state.tables.length + 2) {
+                    changed = false;
+                    state.relations.forEach(r => {
+                        if (tableLevelMap[r.toTableId] < tableLevelMap[r.fromTableId] + 1) {
+                            tableLevelMap[r.toTableId] = tableLevelMap[r.fromTableId] + 1;
+                            changed = true;
+                        }
+                    });
+                    iterations++;
+                }
+                const maxLevel = Object.values(tableLevelMap).length ? Math.max(...Object.values(tableLevelMap)) : 0;
+                
+                for (let level = 0; level <= maxLevel; level++) {
+                    const tablesInLevel = state.tables.filter(t => tableLevelMap[t.id] === level);
+                    if (tablesInLevel.length === 0) continue;
+                    
+                    // Add new page if needed
+                    if (yPos > 250) {
+                        doc.addPage();
+                        yPos = 20;
+                    }
+                    
+                    // Level Header
+                    doc.setFontSize(12);
+                    doc.setTextColor(71, 85, 105);
+                    const levelTitle = level === 0 ? 'Level 0 (Root Tables)' : `Level ${level} (Dependent Tables)`;
+                    doc.text(levelTitle, 14, yPos);
+                    yPos += 8;
+                    
+                    tablesInLevel.forEach(table => {
+                        // Check if we need a new page
+                        if (yPos > 240) {
+                            doc.addPage();
+                            yPos = 20;
+                        }
+                        
+                        // Table Name
+                        doc.setFontSize(11);
+                        doc.setTextColor(30, 41, 59);
+                        doc.setFont(undefined, 'bold');
+                        doc.text(table.name.toUpperCase(), 14, yPos);
+                        yPos += 2;
+                        
+                        // Parent Relations
+                        const parentRels = state.relations.filter(r => r.toTableId === table.id);
+                        if (parentRels.length > 0) {
+                            doc.setFontSize(8);
+                            doc.setTextColor(100, 116, 139);
+                            doc.setFont(undefined, 'normal');
+                            const parentNames = parentRels.map(r => {
+                                const p = state.tables.find(t => t.id === r.fromTableId);
+                                return p ? p.name : '';
+                            }).filter(n => n).join(', ');
+                            doc.text(`References: ${parentNames}`, 14, yPos + 4);
+                            yPos += 6;
+                        } else {
+                            yPos += 3;
+                        }
+                        
+                        // Fields Table
+                        const fieldData = table.fields.map(f => [
+                            f.name,
+                            f.type + (f.enumValues ? ` (${f.enumValues})` : ''),
+                            f.isPk ? '✓' : '',
+                            f.isNullable ? '✓' : ''
+                        ]);
+                        
+                        doc.autoTable({
+                            startY: yPos,
+                            head: [['Field Name', 'Type', 'PK', 'Nullable']],
+                            body: fieldData,
+                            theme: 'grid',
+                            styles: { fontSize: 8, cellPadding: 2 },
+                            headStyles: { fillColor: [79, 70, 229], textColor: 255, fontStyle: 'bold' },
+                            alternateRowStyles: { fillColor: [248, 250, 252] },
+                            margin: { left: 14, right: 14 },
+                            tableWidth: 'auto',
+                            columnStyles: {
+                                0: { cellWidth: 50 },
+                                1: { cellWidth: 70 },
+                                2: { cellWidth: 15, halign: 'center' },
+                                3: { cellWidth: 20, halign: 'center' }
+                            }
+                        });
+                        
+                        yPos = doc.lastAutoTable.finalY + 10;
+                    });
+                    
+                    yPos += 5;
+                }
+                
+                // Save PDF
+                doc.save(`database-schema-${new Date().toISOString().slice(0,10)}.pdf`);
+                app.showToast('PDF exported successfully!');
             },
             triggerImport: () => { document.getElementById('import-file').click(); },
             handleFileSelect: (event) => {
