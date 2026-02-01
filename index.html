@@ -1985,6 +1985,33 @@
                     const rect = canvas.getBoundingClientRect();
                     state.ui.mousePos = { x: (e.clientX - rect.left - state.view.x) / state.view.scale, y: (e.clientY - rect.top - state.view.y) / state.view.scale };
                     
+                    // Auto-scroll when dragging connection near edges
+                    if (state.ui.connectingFrom) {
+                        const edgeThreshold = 80; // pixels from edge to trigger scroll
+                        const scrollSpeed = 15; // pixels to scroll per frame
+                        let scrolled = false;
+                        
+                        if (e.clientX < edgeThreshold) {
+                            state.view.x += scrollSpeed;
+                            scrolled = true;
+                        } else if (e.clientX > window.innerWidth - edgeThreshold) {
+                            state.view.x -= scrollSpeed;
+                            scrolled = true;
+                        }
+                        
+                        if (e.clientY < edgeThreshold) {
+                            state.view.y += scrollSpeed;
+                            scrolled = true;
+                        } else if (e.clientY > window.innerHeight - edgeThreshold) {
+                            state.view.y -= scrollSpeed;
+                            scrolled = true;
+                        }
+                        
+                        if (scrolled) {
+                            app.updateCanvasTransform();
+                        }
+                    }
+                    
                     if (state.ui.isDraggingCanvas) {
                         state.view.x = e.clientX - state.ui.dragStart.x;
                         state.view.y = e.clientY - state.ui.dragStart.y;
