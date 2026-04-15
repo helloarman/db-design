@@ -29,6 +29,9 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
 
         /* Syntax Highlighting Mock */
         .code-block {
@@ -70,6 +73,7 @@
         .dragging-table {
             transition: none !important;
             will-change: transform;
+            z-index: 50 !important;
         }
 
         /* Connection Animation */
@@ -105,7 +109,7 @@
         }
         .relation-badge:hover {
             transform: scale(1.1);
-            z-index: 50;
+            z-index: 60;
         }
         .relation-badge.badge-hover {
             background-color: #6366f1 !important;
@@ -141,49 +145,51 @@
     <!-- UI Layer: Toolbar (Left) -->
     <div id="left-toolbar" class="absolute top-16 left-4 z-50 flex flex-col gap-2 transition-opacity duration-300">
         <div class="bg-white shadow-lg rounded-xl p-2 border border-slate-200 flex flex-col gap-2">
-            <div class="p-2 bg-indigo-600 text-white rounded-lg flex items-center justify-center shadow-md">
+            
+            <button onclick="app.openDBManager()" class="p-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg flex items-center justify-center shadow-md transition-colors tooltip-container group relative" title="Manage Databases">
                 <i data-lucide="database" class="w-6 h-6"></i>
-            </div>
+                <span class="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">Manage Databases</span>
+            </button>
             
             <div class="h-px bg-slate-200 my-1"></div>
             
             <button onclick="app.openModal()" class="p-3 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors tooltip-container group relative" title="Add Table">
                 <i data-lucide="plus" class="w-6 h-6"></i>
-                <span class="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap">Add Table</span>
+                <span class="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">Add Table</span>
             </button>
             
             <button onclick="app.autoLayout()" class="p-3 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors group relative" title="Auto Layout">
                 <i data-lucide="layout-template" class="w-6 h-6 text-indigo-500"></i>
-                <span class="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap">Auto Layout</span>
+                <span class="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">Auto Layout</span>
             </button>
 
             <button onclick="app.resetView()" class="p-3 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors group relative" title="Reset View">
                 <i data-lucide="maximize-2" class="w-6 h-6 text-slate-500"></i>
-                <span class="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap">Reset View</span>
+                <span class="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">Reset View</span>
             </button>
 
             <div class="h-px bg-slate-200 my-1"></div>
 
             <button onclick="app.exportSchema()" class="p-3 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors group relative" title="Export JSON">
                 <i data-lucide="file-json" class="w-6 h-6 text-green-500"></i>
-                <span class="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap">Export JSON</span>
+                <span class="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">Export JSON</span>
             </button>
 
             <button onclick="app.triggerImport()" class="p-3 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors group relative" title="Import JSON">
                 <i data-lucide="file-up" class="w-6 h-6 text-blue-500"></i>
-                <span class="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap">Import JSON</span>
+                <span class="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">Import JSON</span>
             </button>
 
             <button onclick="app.exportPDF()" class="p-3 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors group relative" title="Export PDF">
                 <i data-lucide="file-down" class="w-6 h-6 text-red-500"></i>
-                <span class="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap">Export PDF</span>
+                <span class="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">Export PDF</span>
             </button>
 
             <div class="h-px bg-slate-200 my-1"></div>
 
             <button onclick="app.requestClear()" class="p-3 hover:bg-rose-50 rounded-lg text-rose-500 transition-colors group relative" title="Clear Board">
                 <i data-lucide="trash-2" class="w-6 h-6"></i>
-                <span class="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap">Clear All</span>
+                <span class="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">Clear All</span>
             </button>
 
             <div class="h-px bg-slate-200 my-1"></div>
@@ -242,6 +248,9 @@
             <button onclick="app.switchView('tree')" id="btn-view-tree" class="px-3 py-1.5 rounded-md text-slate-500 hover:bg-slate-50 transition-all flex items-center gap-2">
                 <i data-lucide="network" class="w-4 h-4"></i> Tree
             </button>
+            <button onclick="app.switchView('prompt')" id="btn-view-prompt" class="px-3 py-1.5 rounded-md text-slate-500 hover:bg-slate-50 transition-all flex items-center gap-2">
+                <i data-lucide="bot" class="w-4 h-4"></i> Prompt
+            </button>
         </div>
     </div>
 
@@ -284,8 +293,11 @@
     <!-- View: Canvas -->
     <div id="canvas-container" class="relative w-full h-full overflow-hidden cursor-grab active:cursor-grabbing">
         <div id="canvas-world" class="absolute origin-top-left will-change-transform">
+            <!-- Regions Layer for DB Containers -->
+            <div id="regions-layer" class="absolute top-0 left-0 pointer-events-none" style="z-index: 0;"></div>
+            
             <!-- SVG Layer for connections -->
-            <svg id="connections-layer" class="absolute top-0 left-0 overflow-visible" style="width: 10000px; height: 10000px; z-index: 0; pointer-events: none;">
+            <svg id="connections-layer" class="absolute top-0 left-0 overflow-visible" style="width: 10000px; height: 10000px; z-index: 1; pointer-events: none;">
                 <defs>
                     <marker id="marker-one" markerWidth="10" markerHeight="10" refX="0" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,10 M0,5 L3,5" stroke="#94a3b8" stroke-width="1.5" fill="none" stroke-linecap="round"/></marker>
                     <marker id="marker-many" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M0,5 L8,5 M8,0 L0,5 L8,10" stroke="#94a3b8" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></marker>
@@ -293,10 +305,11 @@
                     <marker id="marker-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L8,4 L0,8 L2,4 Z" fill="#6366f1" /></marker>
                 </defs>
             </svg>
+            
             <!-- Nodes Layer -->
-            <div id="nodes-layer" class="absolute top-0 left-0" style="z-index: 1;"></div>
+            <div id="nodes-layer" class="absolute top-0 left-0" style="z-index: 2;"></div>
             <!-- Labels Layer -->
-             <div id="labels-layer" class="absolute top-0 left-0 pointer-events-none" style="z-index: 2;"></div>
+             <div id="labels-layer" class="absolute top-0 left-0 pointer-events-none" style="z-index: 3;"></div>
         </div>
     </div>
 
@@ -310,7 +323,44 @@
         <div class="max-w-3xl mx-auto" id="tree-content"></div>
     </div>
 
+    <!-- View: Prompt Container -->
+    <div id="prompt-view-container" class="hidden absolute inset-0 bg-slate-50 z-30 overflow-y-auto pt-20 pb-10 px-4">
+        <div class="max-w-4xl mx-auto space-y-8" id="prompt-content"></div>
+    </div>
+
     <!-- Modals -->
+    
+    <!-- Database Manager Modal -->
+    <div id="db-manager-modal-backdrop" class="hidden fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center transition-opacity opacity-0">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden transform scale-95 transition-transform p-6" id="db-manager-modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-gray-800">System Databases</h3>
+                <button onclick="app.closeDBManager()" class="p-1 hover:bg-gray-100 rounded-full text-gray-500">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <div class="flex flex-col gap-4">
+                <div id="db-manager-list" class="flex flex-col gap-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                    <!-- Populated dynamically -->
+                </div>
+                
+                <div class="h-px bg-slate-200"></div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">New Database Container</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="new-db-input" placeholder="e.g. Identity Service" class="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none" onkeyup="if(event.key === 'Enter') app.addDB()">
+                        <button onclick="app.addDB()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm whitespace-nowrap">
+                            Add DB
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Table Modal -->
     <div id="modal-backdrop" class="hidden fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center transition-opacity opacity-0">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden transform scale-95 transition-transform p-6" id="modal-content">
             <div class="flex justify-between items-center mb-4">
@@ -320,6 +370,21 @@
                 </button>
             </div>
             <div class="flex flex-col gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Target Database Container</label>
+                    <div class="relative">
+                        <select id="new-table-db-select" class="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all appearance-none bg-white">
+                            <!-- Populated dynamically -->
+                        </select>
+                        <div class="absolute left-3 top-2.5 text-slate-400">
+                            <i data-lucide="database" class="w-4 h-4"></i>
+                        </div>
+                        <div class="absolute right-3 top-2.5 text-slate-400 pointer-events-none">
+                            <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                        </div>
+                    </div>
+                </div>
+                
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">Table Name</label>
                     <div class="relative">
@@ -339,6 +404,7 @@
         </div>
     </div>
 
+    <!-- Clear Board Modal -->
     <div id="clear-modal-backdrop" class="hidden fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center transition-opacity opacity-0">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden transform scale-95 transition-transform p-6" id="clear-modal-content">
             <div class="flex flex-col items-center text-center gap-4">
@@ -361,6 +427,7 @@
         </div>
     </div>
 
+    <!-- Delete Table Modal -->
     <div id="delete-table-modal-backdrop" class="hidden fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center transition-opacity opacity-0">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden transform scale-95 transition-transform p-6" id="delete-table-modal-content">
             <div class="flex flex-col items-center text-center gap-4">
@@ -383,6 +450,44 @@
         </div>
     </div>
 
+    <!-- Move Table Modal -->
+    <div id="move-table-modal-backdrop" class="hidden fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center transition-opacity opacity-0">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden transform scale-95 transition-transform p-6" id="move-table-modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-gray-800">Move Table</h3>
+                <button onclick="app.closeMoveTableModal()" class="p-1 hover:bg-gray-100 rounded-full text-gray-500">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="flex flex-col gap-4">
+                <p class="text-sm text-slate-500">Move "<span id="move-table-name-display" class="font-semibold text-slate-700"></span>" to a different database container.</p>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Destination Database</label>
+                    <div class="relative">
+                        <select id="move-table-db-select" class="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all appearance-none bg-white">
+                            <!-- Populated dynamically -->
+                        </select>
+                        <div class="absolute left-3 top-2.5 text-slate-400">
+                            <i data-lucide="database" class="w-4 h-4"></i>
+                        </div>
+                        <div class="absolute right-3 top-2.5 text-slate-400 pointer-events-none">
+                            <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex gap-3 w-full mt-2">
+                    <button onclick="app.closeMoveTableModal()" class="flex-1 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-colors">
+                        Cancel
+                    </button>
+                    <button onclick="app.confirmMoveTable()" class="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors shadow-sm">
+                        Move
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Expand Modal -->
     <div id="expand-modal-backdrop" class="hidden fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center transition-opacity opacity-0" onclick="if(event.target === this) app.closeExpandModal()">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden transform scale-95 transition-transform" id="expand-modal-content">
             <div class="flex items-center justify-between p-4 border-b border-slate-200 bg-slate-50">
@@ -391,7 +496,7 @@
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
-            <div class="overflow-auto max-h-[calc(90vh-80px)]" id="expand-modal-body">
+            <div class="overflow-auto max-h-[calc(90vh-80px)] custom-scrollbar" id="expand-modal-body">
                 <!-- Content will be dynamically inserted here -->
             </div>
         </div>
@@ -412,6 +517,9 @@
 
         let state = {
             projectName: 'Database Schema',
+            databases: [
+                { id: 'db_default', name: 'Main Database' }
+            ],
             tables: [],
             relations: [], 
             view: { x: 0, y: 0, scale: 1 },
@@ -419,16 +527,19 @@
                 isDraggingCanvas: false,
                 dragStart: { x: 0, y: 0 },
                 draggingTable: null,
+                draggingDB: null,
                 draggingField: null,
                 connectingFrom: null,
                 showConnectionLine: false,
                 mousePos: { x: 0, y: 0 },
                 renamingTableId: null,
-                activeView: 'board', // 'board' | 'list' | 'tree'
-                expandedNodes: new Set(), // stores paths like "rootId/childId"
+                renamingDbId: null,
+                movingTableId: null,
+                activeView: 'board', // 'board' | 'list' | 'tree' | 'prompt'
+                expandedNodes: new Set(),
                 animationFrameId: null,
                 selectedRelation: null,
-                sqlDialect: 'mysql', // 'mysql' | 'postgresql' | 'sqlite' | 'sqlserver'
+                sqlDialect: 'mysql', 
                 searchQuery: '',
                 searchResults: []
             }
@@ -610,15 +721,10 @@
                 const singularName = app.getSingular(table.name);
                 const modelName = singularName.split(/[\s_]+/).map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join('');
                 
-                // Find relationships where this table is the parent (hasMany/hasOne)
                 const childRels = state.relations.filter(r => r.fromTableId === table.id);
-                
-                // Find relationships where this table is the child (belongsTo)
                 const parentRels = state.relations.filter(r => r.toTableId === table.id);
-                
                 let php = '';
                 
-                // BelongsTo relationships (this table has foreign keys)
                 parentRels.forEach(rel => {
                     const parentTable = state.tables.find(t => t.id === rel.fromTableId);
                     if (!parentTable) return;
@@ -630,7 +736,6 @@
                     php += `public function ${methodName}()\n{\n    return $this->belongsTo(${parentModelName}::class);\n}\n\n`;
                 });
                 
-                // HasMany/HasOne relationships (other tables reference this table)
                 childRels.forEach(rel => {
                     const childTable = state.tables.find(t => t.id === rel.toTableId);
                     if (!childTable) return;
@@ -658,7 +763,7 @@
                 document.getElementById('project-name-input').value = state.projectName || 'Database Schema';
                 if (state.tables.length === 0) {
                     state.tables = [{
-                        id: 'users_tbl', name: 'users', x: 100, y: 100, color: 'border-blue-500', activeTab: 'fields',
+                        id: 'users_tbl', dbId: 'db_default', name: 'users', x: 100, y: 100, color: 'border-blue-500', activeTab: 'fields',
                         fields: [
                             { id: 'f1', name: 'id', type: 'UUID', isPk: true, isNullable: false },
                             { id: 'f2', name: 'email', type: 'VARCHAR', isPk: false, isNullable: false },
@@ -667,7 +772,6 @@
                     }];
                 }
                 
-                // Initialize expandedNodes if it was lost in parsing (Set is not JSON stringifiable)
                 if(!state.ui.expandedNodes) state.ui.expandedNodes = new Set();
                 
                 app.updateCanvasTransform();
@@ -682,6 +786,7 @@
             saveState: () => {
                 localStorage.setItem('db_workboard_state', JSON.stringify({
                     projectName: state.projectName,
+                    databases: state.databases,
                     tables: state.tables,
                     relations: state.relations,
                     view: state.view
@@ -694,17 +799,263 @@
                     try {
                         const parsed = JSON.parse(saved);
                         state.projectName = parsed.projectName || 'Database Schema';
+                        state.databases = parsed.databases || [];
                         state.tables = parsed.tables || [];
                         state.relations = parsed.relations || [];
                         state.view = parsed.view || { x: 0, y: 0, scale: 1 };
-                        state.ui.expandedNodes = new Set(); // Reset visual state
+                        state.ui.expandedNodes = new Set();
                     } catch (e) { console.error('Failed to load state', e); }
                 }
+                
+                // Fallbacks
+                if (!state.databases || state.databases.length === 0) {
+                    state.databases = [{ id: 'db_default', name: 'Main Database' }];
+                }
+                state.tables.forEach(t => {
+                    if (!t.dbId) t.dbId = 'db_default';
+                });
             },
 
             updateProjectName: (name) => {
                 state.projectName = name.trim() || 'Database Schema';
                 app.saveState();
+            },
+            
+            generateId: () => Math.random().toString(36).substr(2, 9),
+            
+            formatName: (name) => name.trim().toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''),
+            
+            getSingular: (name) => {
+                if (name.endsWith('ies')) return name.slice(0, -3) + 'y';
+                if (name.endsWith('s')) return name.slice(0, -1);
+                return name;
+            },
+
+            showToast: (message) => {
+                const toast = document.getElementById('toast-notification');
+                const msgSpan = document.getElementById('toast-message');
+                msgSpan.textContent = message;
+                toast.classList.remove('hidden');
+                setTimeout(() => { toast.classList.remove('opacity-0'); }, 10);
+                setTimeout(() => {
+                    toast.classList.add('opacity-0');
+                    setTimeout(() => { toast.classList.add('hidden'); }, 300);
+                }, 2000);
+            },
+            
+            copyToClipboard: (text) => {
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                textArea.style.position = "fixed"; textArea.style.left = "-9999px";
+                document.body.appendChild(textArea);
+                textArea.focus(); textArea.select();
+                try {
+                    const successful = document.execCommand('copy');
+                    const msg = successful ? 'Copied to clipboard!' : 'Failed to copy';
+                    app.showToast(msg);
+                } catch (err) { app.showToast('Failed to copy'); }
+                document.body.removeChild(textArea);
+            },
+            
+            exportSchema: () => {
+                const data = { projectName: state.projectName, databases: state.databases, tables: state.tables, relations: state.relations, view: state.view };
+                const json = JSON.stringify(data, null, 2);
+                const blob = new Blob([json], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                const fileName = `${state.projectName.toLowerCase().replace(/\s+/g, '-')}-${new Date().toISOString().slice(0,10)}.json`;
+                const a = document.createElement('a'); a.href = url; a.download = fileName;
+                document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+                app.showToast('Schema exported!');
+            },
+            
+            exportPDF: () => {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                doc.setFontSize(20);
+                doc.setTextColor(79, 70, 229); // Indigo
+                doc.text(state.projectName || 'Database Schema', 14, 20);
+                
+                doc.setFontSize(10);
+                doc.setTextColor(100, 116, 139); // Slate
+                doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 28);
+                doc.text(`Total Databases: ${state.databases.length} | Total Tables: ${state.tables.length} | Total Relations: ${state.relations.length}`, 14, 34);
+                
+                let yPos = 45;
+                
+                state.databases.forEach(db => {
+                    const tablesInLevel = state.tables.filter(t => t.dbId === db.id);
+                    if (tablesInLevel.length === 0) return;
+                    
+                    if (yPos > 250) {
+                        doc.addPage();
+                        yPos = 20;
+                    }
+                    
+                    doc.setFontSize(12);
+                    doc.setTextColor(71, 85, 105);
+                    doc.text(`Database Container: ${db.name}`, 14, yPos);
+                    yPos += 8;
+                    
+                    tablesInLevel.forEach(table => {
+                        if (yPos > 240) {
+                            doc.addPage();
+                            yPos = 20;
+                        }
+                        
+                        doc.setFontSize(11);
+                        doc.setTextColor(30, 41, 59);
+                        doc.setFont(undefined, 'bold');
+                        doc.text(table.name.toUpperCase(), 14, yPos);
+                        yPos += 2;
+                        
+                        const parentRels = state.relations.filter(r => r.toTableId === table.id);
+                        if (parentRels.length > 0) {
+                            doc.setFontSize(8);
+                            doc.setTextColor(100, 116, 139);
+                            doc.setFont(undefined, 'normal');
+                            const parentNames = parentRels.map(r => {
+                                const p = state.tables.find(t => t.id === r.fromTableId);
+                                return p ? p.name : '';
+                            }).filter(n => n).join(', ');
+                            doc.text(`References: ${parentNames}`, 14, yPos + 4);
+                            yPos += 6;
+                        } else {
+                            yPos += 3;
+                        }
+                        
+                        const fieldData = table.fields.map(f => [
+                            f.name,
+                            f.type + (f.enumValues ? ` (${f.enumValues})` : ''),
+                            f.isPk ? '✓' : '',
+                            f.isNullable ? '✓' : ''
+                        ]);
+                        
+                        doc.autoTable({
+                            startY: yPos,
+                            head: [['Field Name', 'Type', 'PK', 'Nullable']],
+                            body: fieldData,
+                            theme: 'grid',
+                            styles: { fontSize: 8, cellPadding: 2 },
+                            headStyles: { fillColor: [79, 70, 229], textColor: 255, fontStyle: 'bold' },
+                            alternateRowStyles: { fillColor: [248, 250, 252] },
+                            margin: { left: 14, right: 14 },
+                            tableWidth: 'auto',
+                            columnStyles: {
+                                0: { cellWidth: 50 },
+                                1: { cellWidth: 70 },
+                                2: { cellWidth: 15, halign: 'center' },
+                                3: { cellWidth: 20, halign: 'center' }
+                            }
+                        });
+                        
+                        yPos = doc.lastAutoTable.finalY + 10;
+                    });
+                    
+                    yPos += 15;
+                });
+                
+                const fileName = `${state.projectName.toLowerCase().replace(/\s+/g, '-')}-${new Date().toISOString().slice(0,10)}.pdf`;
+                doc.save(fileName);
+                app.showToast('PDF exported successfully!');
+            },
+            
+            triggerImport: () => { document.getElementById('import-file').click(); },
+            
+            handleFileSelect: (event) => {
+                const file = event.target.files[0]; if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        if (data.tables) {
+                            state.projectName = data.projectName || 'Database Schema';
+                            state.databases = data.databases && data.databases.length > 0 ? data.databases : [{ id: 'db_default', name: 'Main Database' }];
+                            state.tables = data.tables;
+                            state.tables.forEach(t => { if(!t.dbId) t.dbId = 'db_default'; });
+                            state.relations = data.relations || []; 
+                            state.view = data.view || { x: 0, y: 0, scale: 1 };
+                            document.getElementById('project-name-input').value = state.projectName;
+                            app.saveState(); app.renderAll(); app.updateCanvasTransform(); app.showToast('Schema imported!');
+                        } else { alert('Invalid file'); }
+                    } catch (err) { alert('Error parsing JSON'); }
+                    event.target.value = '';
+                };
+                reader.readAsText(file);
+            },
+
+            // --- Database Manager Logic ---
+            openDBManager: () => {
+                app.renderDBManagerList();
+                const backdrop = document.getElementById('db-manager-modal-backdrop');
+                const content = document.getElementById('db-manager-modal-content');
+                backdrop.classList.remove('hidden');
+                setTimeout(() => {
+                    backdrop.classList.remove('opacity-0');
+                    content.classList.remove('scale-95');
+                    content.classList.add('scale-100');
+                }, 10);
+                document.getElementById('new-db-input').focus();
+            },
+
+            closeDBManager: () => {
+                const backdrop = document.getElementById('db-manager-modal-backdrop');
+                const content = document.getElementById('db-manager-modal-content');
+                backdrop.classList.add('opacity-0');
+                content.classList.remove('scale-100');
+                content.classList.add('scale-95');
+                setTimeout(() => {
+                    backdrop.classList.add('hidden');
+                }, 200);
+            },
+
+            renderDBManagerList: () => {
+                const list = document.getElementById('db-manager-list');
+                list.innerHTML = state.databases.map(db => {
+                    const tableCount = state.tables.filter(t => t.dbId === db.id).length;
+                    return `
+                        <div class="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                            <div class="flex items-center gap-3">
+                                <i data-lucide="database" class="w-4 h-4 text-indigo-500"></i>
+                                <span class="text-sm font-bold text-slate-700">${db.name}</span>
+                                <span class="text-[10px] bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full font-semibold">${tableCount} tables</span>
+                            </div>
+                            <button onclick="app.deleteDB('${db.id}')" class="p-1.5 text-slate-400 hover:bg-rose-100 hover:text-rose-500 rounded-lg transition-colors" title="Delete Container">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    `;
+                }).join('');
+                lucide.createIcons({ root: list });
+            },
+
+            addDB: () => {
+                const input = document.getElementById('new-db-input');
+                const name = input.value.trim();
+                if (!name) return;
+                state.databases.push({ id: 'db_' + app.generateId(), name });
+                app.saveState();
+                input.value = '';
+                app.renderDBManagerList();
+                app.showToast('Database created!');
+                app.renderRegions();
+            },
+
+            deleteDB: (id) => {
+                const tableCount = state.tables.filter(t => t.dbId === id).length;
+                if (tableCount > 0) {
+                    alert(`Cannot delete: ${tableCount} table(s) exist in this database. Please delete or reassign them first.`);
+                    return;
+                }
+                if (state.databases.length === 1) {
+                    alert('You must have at least one database container.');
+                    return;
+                }
+                state.databases = state.databases.filter(db => db.id !== id);
+                app.saveState();
+                app.renderDBManagerList();
+                app.showToast('Database deleted!');
+                app.renderRegions();
             },
 
             // --- View Switching ---
@@ -713,25 +1064,28 @@
                 const boardBtn = document.getElementById('btn-view-board');
                 const listBtn = document.getElementById('btn-view-list');
                 const treeBtn = document.getElementById('btn-view-tree');
+                const promptBtn = document.getElementById('btn-view-prompt');
                 
                 const canvas = document.getElementById('canvas-container');
                 const list = document.getElementById('list-view-container');
                 const tree = document.getElementById('tree-view-container');
+                const promptContainer = document.getElementById('prompt-view-container');
                 
                 const leftToolbar = document.getElementById('left-toolbar');
                 const bottomInfo = document.getElementById('bottom-info');
 
-                // Reset styles
                 const activeClass = "px-3 py-1.5 rounded-md bg-indigo-50 text-indigo-600 shadow-sm transition-all flex items-center gap-2";
                 const inactiveClass = "px-3 py-1.5 rounded-md text-slate-500 hover:bg-slate-50 transition-all flex items-center gap-2";
                 
                 boardBtn.className = mode === 'board' ? activeClass : inactiveClass;
                 listBtn.className = mode === 'list' ? activeClass : inactiveClass;
                 treeBtn.className = mode === 'tree' ? activeClass : inactiveClass;
+                promptBtn.className = mode === 'prompt' ? activeClass : inactiveClass;
 
                 canvas.classList.add('hidden');
                 list.classList.add('hidden');
                 tree.classList.add('hidden');
+                promptContainer.classList.add('hidden');
                 leftToolbar.classList.add('opacity-20', 'pointer-events-none');
                 bottomInfo.classList.add('opacity-0');
 
@@ -746,6 +1100,9 @@
                 } else if (mode === 'tree') {
                     tree.classList.remove('hidden');
                     app.renderTreeView();
+                } else if (mode === 'prompt') {
+                    promptContainer.classList.remove('hidden');
+                    app.renderPromptView();
                 }
             },
 
@@ -774,15 +1131,9 @@
                 }
                 
                 state.ui.searchResults = state.tables.filter(table => {
-                    // Search in table name
                     if (table.name.toLowerCase().includes(query)) return true;
-                    
-                    // Search in field names
                     if (table.fields.some(f => f.name.toLowerCase().includes(query))) return true;
-                    
-                    // Search in field types
                     if (table.fields.some(f => f.type.toLowerCase().includes(query))) return true;
-                    
                     return false;
                 }).map(table => ({
                     table,
@@ -848,21 +1199,18 @@
                 app.hideSearchSuggestions();
                 
                 if (state.ui.activeView === 'board') {
-                    // Center on the table
                     const centerX = window.innerWidth / 2 - table.x * state.view.scale - 150;
                     const centerY = window.innerHeight / 2 - table.y * state.view.scale - 200;
                     state.view.x = centerX;
                     state.view.y = centerY;
                     app.updateCanvasTransform();
                     
-                    // Highlight the table
                     const el = document.getElementById(tableId);
                     if (el) {
                         el.classList.add('ring-4', 'ring-indigo-400');
                         setTimeout(() => el.classList.remove('ring-4', 'ring-indigo-400'), 2000);
                     }
                 } else if (state.ui.activeView === 'list') {
-                    // Scroll to the table in list view
                     const el = document.getElementById(`list-card-${tableId}`);
                     if (el) {
                         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -870,7 +1218,6 @@
                         setTimeout(() => el.classList.remove('ring-4', 'ring-indigo-400'), 2000);
                     }
                 } else if (state.ui.activeView === 'tree') {
-                    // Switch to board view and center on table
                     app.switchView('board');
                     setTimeout(() => {
                         const centerX = window.innerWidth / 2 - table.x * state.view.scale - 150;
@@ -903,6 +1250,74 @@
                 });
             },
 
+            renderPromptView: () => {
+                const container = document.getElementById('prompt-content');
+                container.innerHTML = '';
+                
+                let promptText = `Act as an expert database architect and backend developer. Here is the database schema for my project "${state.projectName}".\n\n`;
+                
+                if (state.tables.length === 0) {
+                    promptText += `(No tables defined yet.)\n`;
+                } else {
+                    promptText += `### Databases & Tables:\n`;
+                    state.databases.forEach(db => {
+                        const dbTables = state.tables.filter(t => t.dbId === db.id);
+                        if (dbTables.length > 0) {
+                            promptText += `\n**Database Container: ${db.name}**\n`;
+                            dbTables.forEach(t => {
+                                promptText += `- Table: **${t.name}**\n`;
+                                t.fields.forEach(f => {
+                                    let attrs = [];
+                                    if (f.isPk) attrs.push('Primary Key');
+                                    if (f.isFk) attrs.push('Foreign Key');
+                                    if (!f.isNullable && !f.isPk) attrs.push('Not Null');
+                                    if (f.type === 'ENUM' && f.enumValues) attrs.push(`Enum: ${f.enumValues}`);
+                                    
+                                    let attrStr = attrs.length > 0 ? ` (${attrs.join(', ')})` : '';
+                                    promptText += `  - ${f.name}: ${f.type}${attrStr}\n`;
+                                });
+                            });
+                        }
+                    });
+                }
+                
+                if (state.relations.length > 0) {
+                    promptText += `\n### Relationships:\n`;
+                    state.relations.forEach(r => {
+                        const fromT = state.tables.find(t => t.id === r.fromTableId);
+                        const toT = state.tables.find(t => t.id === r.toTableId);
+                        const fkField = toT ? toT.fields.find(f => f.id === r.fkFieldId) : null;
+                        if (fromT && toT && fkField) {
+                            promptText += `- ${fromT.name} has a ${r.type} relationship with ${toT.name} (via ${toT.name}.${fkField.name})\n`;
+                        }
+                    });
+                }
+                
+                promptText += `\n### My Request:\n[Please provide the API code for these models / Help me optimize this schema / Generate frontend types for this schema]`;
+
+                const html = `
+                    <div class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-500">
+                        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                            <div>
+                                <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                                    <i data-lucide="bot" class="w-5 h-5 text-indigo-500"></i> AI Agent Prompt
+                                </h2>
+                                <p class="text-sm text-slate-500 mt-1">Copy this generated context to ChatGPT, Claude, or any AI assistant.</p>
+                            </div>
+                            <button onclick="app.copyToClipboard(document.getElementById('generated-prompt-text').value)" class="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors shadow-sm">
+                                <i data-lucide="copy" class="w-4 h-4"></i> Copy Prompt
+                            </button>
+                        </div>
+                        <div class="p-6">
+                            <textarea id="generated-prompt-text" class="w-full h-[60vh] p-4 bg-slate-900 text-slate-200 font-mono text-sm rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 resize-none custom-scrollbar leading-relaxed" spellcheck="false">${promptText}</textarea>
+                        </div>
+                    </div>
+                `;
+                
+                container.innerHTML = html;
+                lucide.createIcons({ root: container });
+            },
+
             // --- Tree View Logic ---
             toggleTreeNode: (path) => {
                 if(state.ui.expandedNodes.has(path)) {
@@ -917,7 +1332,6 @@
                 const container = document.getElementById('tree-content');
                 container.innerHTML = '';
 
-                // Build Graph
                 const adj = {}; 
                 const inDegree = {};
                 state.tables.forEach(t => { adj[t.id] = []; inDegree[t.id] = 0; });
@@ -929,18 +1343,12 @@
                     }
                 });
 
-                // Get Roots
                 const roots = state.tables.filter(t => inDegree[t.id] === 0);
-                
-                // Fallback for circular/complex graphs: ensure every table appears at least once if not reached
-                // For now simple root logic. If no roots found (fully circular), pick one?
                 let nodesToRender = [...roots];
                 if(nodesToRender.length === 0 && state.tables.length > 0) nodesToRender = [state.tables[0]];
 
                 const renderNode = (tableId, parentPath = 'root', depth = 0, visited = new Set()) => {
                     if (visited.has(tableId)) return ''; 
-                    // Allow revisiting in tree (A->B, C->B) but check recursion depth or cycles if needed
-                    // Simple tree visualization usually allows duplication across branches
                     const currentPath = `${parentPath}/${tableId}`;
                     
                     const table = state.tables.find(t => t.id === tableId);
@@ -949,9 +1357,8 @@
                     const children = adj[tableId] || [];
                     const hasChildren = children.length > 0;
                     const isExpanded = state.ui.expandedNodes.has(currentPath);
-                    const baseColor = table.color.split('-')[1];
+                    const baseColor = table.color ? table.color.split('-')[1] : 'blue';
 
-                    // Styling based on level
                     const paddingLeft = depth > 0 ? 'ml-6 border-l-2 border-slate-200 pl-3' : '';
 
                     let html = `
@@ -1043,7 +1450,6 @@
                         cardWrapper.className = "bg-white rounded-lg border border-slate-200 shadow-sm flex flex-col hover:shadow-md transition-shadow relative overflow-hidden";
                         grid.appendChild(cardWrapper);
                         
-                        // Pass element explicitly to avoid query selector issues during rendering loop
                         app.renderListCard(table, cardWrapper);
                     });
 
@@ -1058,7 +1464,7 @@
                 const el = targetEl || document.getElementById(`list-card-${table.id}`);
                 if(!el) return;
 
-                const baseColor = table.color.split('-')[1];
+                const baseColor = table.color ? table.color.split('-')[1] : 'blue';
                 const parentRels = state.relations.filter(r => r.toTableId === table.id);
                 const parentNames = parentRels.map(r => {
                     const p = state.tables.find(t => t.id === r.fromTableId);
@@ -1132,7 +1538,6 @@
                         </div>
                     `;
                 } else if (table.activeTab === 'sql') {
-                    const dialectName = {'mysql': 'MySQL', 'postgresql': 'PostgreSQL', 'sqlite': 'SQLite', 'sqlserver': 'SQL Server'}[state.ui.sqlDialect];
                     contentHtml = `
                         <div class="p-0 bg-slate-50/50">
                             <div class="px-4 py-2 border-b border-slate-100 bg-white flex items-center justify-between">
@@ -1158,11 +1563,6 @@
                         </div>
                     `;
                 } else if (table.activeTab === 'laravel') {
-                    const tableName = app.formatName(table.name);
-                    const migrationCmd = `php artisan make:migration create_${tableName}_table`;
-                    const singularName = app.getSingular(table.name);
-                    const modelName = singularName.split(/[\s_]+/).map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join('');
-                    const modelCmd = `php artisan make:model ${modelName} -m`;
                     const relationsMethods = generators.relations(table);
                     contentHtml = `
                         <div class="p-0 bg-slate-50/50">
@@ -1175,40 +1575,11 @@
                                         <pre class="code-block text-indigo-600 text-xs">${generators.laravel(table)}</pre>
                                     </div>
                                 </div>
-                                <div class="border-b border-slate-200 bg-white">
-                                    <div class="px-4 py-2 bg-slate-100/50">
-                                        <div class="text-[10px] text-slate-500 font-bold uppercase tracking-wide">Model Relationships</div>
-                                    </div>
-                                    <div class="overflow-auto max-h-40 p-4 custom-scrollbar">
-                                        <pre class="code-block text-emerald-600 text-xs">${relationsMethods}</pre>
-                                    </div>
-                                </div>
                             </div>
                             <div class="px-4 py-3 space-y-2 border-t border-slate-100 bg-white">
-                                <div class="flex items-center gap-2">
-                                    <div class="flex-1 bg-slate-50 border border-slate-200 rounded px-2 py-1.5">
-                                        <div class="text-[9px] text-slate-400 font-semibold uppercase tracking-wide mb-0.5">Migration Command</div>
-                                        <code class="text-[11px] text-slate-700 font-mono block select-all">${migrationCmd}</code>
-                                    </div>
-                                    <button onclick="app.copyToClipboard('${migrationCmd}')" class="flex items-center justify-center gap-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-600 px-2.5 py-1.5 rounded transition-colors shrink-0">
-                                        <i data-lucide="copy" class="w-3 h-3"></i>
-                                    </button>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <div class="flex-1 bg-slate-50 border border-slate-200 rounded px-2 py-1.5">
-                                        <div class="text-[9px] text-slate-400 font-semibold uppercase tracking-wide mb-0.5">Model Command</div>
-                                        <code class="text-[11px] text-slate-700 font-mono block select-all">${modelCmd}</code>
-                                    </div>
-                                    <button onclick="app.copyToClipboard('${modelCmd}')" class="flex items-center justify-center gap-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-600 px-2.5 py-1.5 rounded transition-colors shrink-0">
-                                        <i data-lucide="copy" class="w-3 h-3"></i>
-                                    </button>
-                                </div>
                                 <div class="pt-1 border-t border-slate-100 flex gap-2">
                                     <button onclick="app.copyToClipboard(generators.laravel(state.tables.find(t=>t.id=='${table.id}')))" class="flex-1 flex items-center justify-center gap-2 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded transition-colors">
                                         <i data-lucide="copy" class="w-3 h-3"></i> Copy Migration
-                                    </button>
-                                    <button onclick="app.copyToClipboard(generators.relations(state.tables.find(t=>t.id=='${table.id}')))" class="flex-1 flex items-center justify-center gap-2 text-xs font-semibold bg-emerald-100 hover:bg-emerald-200 text-emerald-700 px-3 py-1.5 rounded transition-colors">
-                                        <i data-lucide="copy" class="w-3 h-3"></i> Copy Relations
                                     </button>
                                 </div>
                             </div>
@@ -1219,210 +1590,191 @@
                 el.innerHTML = accent + headerHtml + tabsHtml + contentHtml;
                 lucide.createIcons({ root: el });
             },
-
-            toggleFieldProp: (tableId, fieldId, prop) => {
-                const table = state.tables.find(t => t.id === tableId);
-                const field = table.fields.find(f => f.id === fieldId);
-                if (field) {
-                    // Rule: Primary Keys cannot be nullable
-                    if (prop === 'isNullable' && field.isPk) return;
-
-                    field[prop] = !field[prop];
-                    app.saveState();
-                    
-                    if (state.ui.activeView === 'board') {
-                        app.renderTable(table);
-                    } else if (state.ui.activeView === 'list') {
-                        app.renderListCard(table);
-                    }
+            
+            renderTable: (table) => {
+                const el = document.getElementById(table.id); if (!el) return;
+                const baseColor = table.color ? table.color.split('-')[1] : 'blue'; 
+                const headerBg = `bg-${baseColor}-600`;
+                let titleContent = `<div class="font-bold text-white text-sm pointer-events-auto cursor-text truncate tracking-wide" ondblclick="app.enableRename('${table.id}')" title="Double click to rename">${table.name}</div>`;
+                if (state.ui.renamingTableId === table.id) {
+                    titleContent = `<input type="text" value="${table.name}" class="w-full bg-white/10 text-white placeholder-white/50 border border-white/30 rounded px-1.5 py-0.5 text-sm font-bold outline-none focus:bg-white/20 focus:border-white" onblur="app.finishRename('${table.id}', this.value)" onkeydown="if(event.key === 'Enter') app.finishRename('${table.id}', this.value)" autoFocus >`;
+                    setTimeout(() => { const input = el.querySelector('input[type="text"]'); if(input) { input.focus(); input.select(); } }, 10);
                 }
-            },
-
-            // --- Helpers, State, Toast, Logic (Keep existing) ---
-            generateId: () => Math.random().toString(36).substr(2, 9),
-            formatName: (name) => name.trim().toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''),
-            getSingular: (name) => {
-                if (name.endsWith('ies')) return name.slice(0, -3) + 'y';
-                if (name.endsWith('s')) return name.slice(0, -1);
-                return name;
-            },
-            showToast: (message) => {
-                const toast = document.getElementById('toast-notification');
-                const msgSpan = document.getElementById('toast-message');
-                msgSpan.textContent = message;
-                toast.classList.remove('hidden');
-                setTimeout(() => { toast.classList.remove('opacity-0'); }, 10);
-                setTimeout(() => {
-                    toast.classList.add('opacity-0');
-                    setTimeout(() => { toast.classList.add('hidden'); }, 300);
-                }, 2000);
-            },
-            copyToClipboard: (text) => {
-                const textArea = document.createElement("textarea");
-                textArea.value = text;
-                textArea.style.position = "fixed"; textArea.style.left = "-9999px";
-                document.body.appendChild(textArea);
-                textArea.focus(); textArea.select();
-                try {
-                    const successful = document.execCommand('copy');
-                    const msg = successful ? 'Copied to clipboard!' : 'Failed to copy';
-                    app.showToast(msg);
-                } catch (err) { app.showToast('Failed to copy'); }
-                document.body.removeChild(textArea);
-            },
-            exportSchema: () => {
-                const data = { projectName: state.projectName, tables: state.tables, relations: state.relations, view: state.view };
-                const json = JSON.stringify(data, null, 2);
-                const blob = new Blob([json], { type: "application/json" });
-                const url = URL.createObjectURL(blob);
-                const fileName = `${state.projectName.toLowerCase().replace(/\s+/g, '-')}-${new Date().toISOString().slice(0,10)}.json`;
-                const a = document.createElement('a'); a.href = url; a.download = fileName;
-                document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
-                app.showToast('Schema exported!');
-            },
-            exportPDF: () => {
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF();
-                
-                // Title
-                doc.setFontSize(20);
-                doc.setTextColor(79, 70, 229); // Indigo
-                doc.text(state.projectName || 'Database Schema', 14, 20);
-                
-                doc.setFontSize(10);
-                doc.setTextColor(100, 116, 139); // Slate
-                doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 28);
-                doc.text(`Total Tables: ${state.tables.length} | Total Relations: ${state.relations.length}`, 14, 34);
-                
-                let yPos = 45;
-                
-                // Organize tables by level
-                const tableLevelMap = {};
-                state.tables.forEach(t => tableLevelMap[t.id] = 0);
-                let changed = true;
-                let iterations = 0;
-                while(changed && iterations < state.tables.length + 2) {
-                    changed = false;
-                    state.relations.forEach(r => {
-                        if (tableLevelMap[r.toTableId] < tableLevelMap[r.fromTableId] + 1) {
-                            tableLevelMap[r.toTableId] = tableLevelMap[r.fromTableId] + 1;
-                            changed = true;
+                const headerHtml = `<div class="table-header flex items-center justify-between p-3 ${headerBg} cursor-grab active:cursor-grabbing rounded-t-xl select-none group relative overflow-hidden" onmousedown="app.startDragTable(event, '${table.id}')"> <div class="absolute inset-0 bg-gradient-to-tr from-black/5 to-transparent pointer-events-none"></div> <div class="flex items-center gap-2 flex-1 mr-2 relative z-10"> <i data-lucide="table-2" class="w-4 h-4 text-white/70"></i> ${titleContent} </div> <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity relative z-10"> <button onclick="event.stopPropagation(); app.openExpandModal('${table.id}')" class="p-1.5 rounded bg-white/10 hover:bg-white/20 text-white/90 transition-colors backdrop-blur-sm shadow-sm" title="Expand View"> <i data-lucide="maximize-2" class="w-3 h-3"></i> </button> <button onclick="event.stopPropagation(); app.openMoveTableModal('${table.id}')" class="p-1.5 rounded bg-white/10 hover:bg-white/20 text-white/90 transition-colors backdrop-blur-sm shadow-sm" title="Move to Database"> <i data-lucide="folder-input" class="w-3 h-3"></i> </button> <button onmousedown="app.startConnectionDrag(event, '${table.id}')" class="p-1.5 rounded bg-white/10 hover:bg-white/20 text-white/90 transition-colors backdrop-blur-sm shadow-sm" title="Drag to Connect"> <i data-lucide="link" class="w-3 h-3"></i> </button> <button onclick="event.stopPropagation(); app.deleteTable('${table.id}')" class="p-1.5 rounded bg-white/10 hover:bg-rose-500 text-white/90 hover:text-white transition-colors backdrop-blur-sm shadow-sm" title="Delete Table"> <i data-lucide="trash-2" class="w-3 h-3"></i> </button> </div> </div>`;
+                const tabsHtml = `<div class="flex text-[11px] font-semibold border-b border-slate-100 bg-white"> <button onclick="app.setTab('${table.id}', 'fields')" class="flex-1 py-2.5 text-center transition-colors relative ${table.activeTab === 'fields' ? `text-${baseColor}-600 bg-${baseColor}-50/50` : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}"> Structure ${table.activeTab === 'fields' ? `<span class="absolute bottom-0 left-0 w-full h-[2px] bg-${baseColor}-600"></span>` : ''} </button> <button onclick="app.setTab('${table.id}', 'sql')" class="flex-1 py-2.5 text-center transition-colors relative ${table.activeTab === 'sql' ? `text-${baseColor}-600 bg-${baseColor}-50/50` : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}"> SQL ${table.activeTab === 'sql' ? `<span class="absolute bottom-0 left-0 w-full h-[2px] bg-${baseColor}-600"></span>` : ''} </button> <button onclick="app.setTab('${table.id}', 'laravel')" class="flex-1 py-2.5 text-center transition-colors relative ${table.activeTab === 'laravel' ? `text-${baseColor}-600 bg-${baseColor}-50/50` : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}"> Laravel ${table.activeTab === 'laravel' ? `<span class="absolute bottom-0 left-0 w-full h-[2px] bg-${baseColor}-600"></span>` : ''} </button> </div>`;
+                let contentHtml = '';
+                if (table.activeTab === 'fields') {
+                    const fieldsHtml = table.fields.map((f, index) => {
+                        let enumHtml = '';
+                        if (f.type === 'ENUM') {
+                            const raw = f.enumValues ? f.enumValues.split(',') : []; const tags = raw.map(v => v.trim().replace(/^['"]|['"]$/g, '')).filter(v => v);
+                            enumHtml = `<div class="pl-8 pr-2 pb-2 flex flex-wrap gap-1 items-center mt-1"> ${tags.map(tag => `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10px] border border-slate-200 font-medium group/tag"> ${tag} <button onclick="app.removeEnumVal('${table.id}', '${f.id}', '${tag}')" onmousedown="event.stopPropagation()" class="hover:text-rose-500 flex items-center justify-center w-3 h-3 rounded-full hover:bg-slate-200 text-xs font-bold leading-none transition-colors">&times;</button> </span>`).join('')} <input type="text" data-enum-input="${f.id}" placeholder="+ value" onkeydown="if(event.key === 'Enter') { app.addEnumVal('${table.id}', '${f.id}', this.value); }" onmousedown="event.stopPropagation()" class="flex-1 min-w-[50px] bg-transparent text-[10px] px-1.5 py-0.5 rounded border border-dashed border-slate-300 hover:border-${baseColor}-400 focus:border-${baseColor}-500 outline-none text-slate-600 placeholder:text-slate-400 transition-colors" > </div>`;
                         }
-                    });
-                    iterations++;
-                }
-                const maxLevel = Object.values(tableLevelMap).length ? Math.max(...Object.values(tableLevelMap)) : 0;
-                
-                for (let level = 0; level <= maxLevel; level++) {
-                    const tablesInLevel = state.tables.filter(t => tableLevelMap[t.id] === level);
-                    if (tablesInLevel.length === 0) continue;
-                    
-                    // Add new page if needed
-                    if (yPos > 250) {
-                        doc.addPage();
-                        yPos = 20;
-                    }
-                    
-                    // Level Header
-                    doc.setFontSize(12);
-                    doc.setTextColor(71, 85, 105);
-                    const levelTitle = level === 0 ? 'Level 0 (Root Tables)' : `Level ${level} (Dependent Tables)`;
-                    doc.text(levelTitle, 14, yPos);
-                    yPos += 8;
-                    
-                    tablesInLevel.forEach(table => {
-                        // Check if we need a new page
-                        if (yPos > 240) {
-                            doc.addPage();
-                            yPos = 20;
-                        }
-                        
-                        // Table Name
-                        doc.setFontSize(11);
-                        doc.setTextColor(30, 41, 59);
-                        doc.setFont(undefined, 'bold');
-                        doc.text(table.name.toUpperCase(), 14, yPos);
-                        yPos += 2;
-                        
-                        // Parent Relations
-                        const parentRels = state.relations.filter(r => r.toTableId === table.id);
-                        if (parentRels.length > 0) {
-                            doc.setFontSize(8);
-                            doc.setTextColor(100, 116, 139);
-                            doc.setFont(undefined, 'normal');
-                            const parentNames = parentRels.map(r => {
-                                const p = state.tables.find(t => t.id === r.fromTableId);
-                                return p ? p.name : '';
-                            }).filter(n => n).join(', ');
-                            doc.text(`References: ${parentNames}`, 14, yPos + 4);
-                            yPos += 6;
-                        } else {
-                            yPos += 3;
-                        }
-                        
-                        // Fields Table
-                        const fieldData = table.fields.map(f => [
-                            f.name,
-                            f.type + (f.enumValues ? ` (${f.enumValues})` : ''),
-                            f.isPk ? '✓' : '',
-                            f.isNullable ? '✓' : ''
-                        ]);
-                        
-                        doc.autoTable({
-                            startY: yPos,
-                            head: [['Field Name', 'Type', 'PK', 'Nullable']],
-                            body: fieldData,
-                            theme: 'grid',
-                            styles: { fontSize: 8, cellPadding: 2 },
-                            headStyles: { fillColor: [79, 70, 229], textColor: 255, fontStyle: 'bold' },
-                            alternateRowStyles: { fillColor: [248, 250, 252] },
-                            margin: { left: 14, right: 14 },
-                            tableWidth: 'auto',
-                            columnStyles: {
-                                0: { cellWidth: 50 },
-                                1: { cellWidth: 70 },
-                                2: { cellWidth: 15, halign: 'center' },
-                                3: { cellWidth: 20, halign: 'center' }
-                            }
-                        });
-                        
-                        yPos = doc.lastAutoTable.finalY + 10;
-                    });
-                    
-                    yPos += 5;
+                        return `<div draggable="true" data-field-id="${f.id}" ondragstart="app.dragFieldStart(event, '${table.id}', ${index})" ondragover="app.dragFieldOver(event)" ondrop="app.dropField(event, '${table.id}', ${index})" ondragend="app.dragFieldEnd(event, '${table.id}')" class="field-row-container group flex flex-col relative transition-all border-b border-slate-50 last:border-0 hover:bg-slate-50/80"> <div class="flex items-center gap-2 p-2"> <div class="cursor-move text-slate-300 hover:text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity"> <i data-lucide="grip-vertical" class="w-3 h-3"></i> </div> <div class="w-5 flex justify-center shrink-0"> ${f.isPk ? `<i data-lucide="key" class="w-3.5 h-3.5 text-amber-500 fill-amber-500/20" title="Primary Key"></i>` : ''} ${f.isFk ? `<i data-lucide="link-2" class="w-3.5 h-3.5 text-blue-500" title="Foreign Key"></i>` : ''} ${!f.isPk && !f.isFk ? `<div class="w-1.5 h-1.5 rounded-full bg-slate-200"></div>` : ''} </div> <input type="text" value="${f.name}" onmousedown="event.stopPropagation()" onchange="app.updateField('${table.id}', '${f.id}', 'name', this.value)" class="flex-1 bg-transparent outline-none font-mono text-[13px] text-slate-700 min-w-0 placeholder:text-slate-300 focus:text-${baseColor}-600 font-medium transition-colors"> <div class="relative group/select"> <select onmousedown="event.stopPropagation()" onchange="app.updateField('${table.id}', '${f.id}', 'type', this.value)" class="appearance-none bg-slate-100 hover:bg-slate-200 text-[10px] text-slate-600 font-bold py-1 px-2 pr-6 rounded-md outline-none cursor-pointer transition-colors border border-transparent focus:border-${baseColor}-300 uppercase tracking-wide"> ${CONSTANTS.DATA_TYPES.map(t => `<option value="${t}" ${f.type === t ? 'selected' : ''}>${t}</option>`).join('')} </select> <i data-lucide="chevron-down" class="absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none"></i> </div> <button onmousedown="event.stopPropagation()" onclick="app.toggleFieldProp('${table.id}', '${f.id}', 'isNullable')" class="px-1.5 py-0.5 rounded text-[9px] font-bold border transition-colors ${f.isNullable ? 'bg-indigo-100 text-indigo-600 border-indigo-200' : 'bg-transparent text-slate-300 border-transparent hover:bg-slate-100 hover:text-slate-50'}" title="Toggle Nullable" ${f.isPk ? 'disabled style="opacity:0.3"' : ''}>N</button> <button onmousedown="event.stopPropagation()" onclick="app.removeField('${table.id}', '${f.id}')" class="opacity-0 group-hover:opacity-100 p-1 text-slate-300 hover:text-rose-500 transition-colors"> <i data-lucide="x" class="w-3.5 h-3.5"></i> </button> </div> ${enumHtml} </div>`;
+                    }).join('');
+                    contentHtml = `<div class="flex flex-col py-1 bg-white min-h-[50px] rounded-b-xl" ondragover="app.dragFieldOver(event)" ondrop="app.dropFieldOnContainer(event, '${table.id}')"> ${fieldsHtml} <div class="px-2 pt-2 pb-2"> <button onclick="app.addField('${table.id}')" class="w-full flex items-center justify-center gap-2 text-xs font-semibold text-slate-400 hover:text-${baseColor}-600 hover:bg-${baseColor}-50 p-2 rounded-lg transition-all border border-dashed border-slate-200 hover:border-${baseColor}-200"> <i data-lucide="plus" class="w-3.5 h-3.5"></i> <span>Add Field</span> </button> </div> </div>`;
+                } else if (table.activeTab === 'sql') {
+                    contentHtml = `<div class="p-0 bg-slate-50/50 rounded-b-xl overflow-hidden h-full flex flex-col"> <div class="px-2 pt-2 pb-1 border-b border-slate-100 bg-white flex items-center justify-between"> <span class="text-[10px] text-slate-500 font-semibold">Database:</span> <div class="relative"> <select onchange="app.changeSqlDialect(this.value)" class="appearance-none bg-slate-100 hover:bg-slate-200 text-[10px] text-slate-700 font-semibold py-1 px-2 pr-6 rounded-md outline-none cursor-pointer transition-colors border border-slate-200"> <option value="mysql" ${state.ui.sqlDialect === 'mysql' ? 'selected' : ''}>MySQL</option> <option value="postgresql" ${state.ui.sqlDialect === 'postgresql' ? 'selected' : ''}>PostgreSQL</option> <option value="sqlite" ${state.ui.sqlDialect === 'sqlite' ? 'selected' : ''}>SQLite</option> <option value="sqlserver" ${state.ui.sqlDialect === 'sqlserver' ? 'selected' : ''}>SQL Server</option> </select> <i data-lucide="chevron-down" class="absolute right-1 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 pointer-events-none"></i> </div> </div> <div class="overflow-auto max-h-64 p-3 custom-scrollbar"> <pre class="code-block text-slate-600 text-xs">${generators.sql(table)}</pre> </div> <div class="p-2 border-t border-slate-100 bg-white"> <button onclick="app.copyToClipboard(generators.sql(state.tables.find(t=>t.id=='${table.id}')))" class="w-full flex items-center justify-center gap-2 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-600 py-2 rounded-lg transition-colors"> <i data-lucide="copy" class="w-3 h-3"></i> Copy SQL </button> </div> </div>`;
+                } else if (table.activeTab === 'laravel') {
+                    const relationsMethods = generators.relations(table);
+                    contentHtml = `<div class="p-0 bg-slate-50/50 rounded-b-xl overflow-hidden h-full flex flex-col"> <div class="overflow-auto max-h-64 p-3 custom-scrollbar"> <pre class="code-block text-indigo-600 text-xs">${generators.laravel(table)}</pre> </div> <div class="p-2 border-t border-slate-100 bg-white"> <button onclick="app.copyToClipboard(generators.laravel(state.tables.find(t=>t.id=='${table.id}')))" class="w-full flex items-center justify-center gap-2 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-600 py-2 rounded-lg transition-colors"> <i data-lucide="copy" class="w-3 h-3"></i> Copy Migration </button> </div> </div>`;
                 }
                 
-                // Save PDF
-                const fileName = `${state.projectName.toLowerCase().replace(/\s+/g, '-')}-${new Date().toISOString().slice(0,10)}.pdf`;
-                doc.save(fileName);
-                app.showToast('PDF exported successfully!');
+                el.innerHTML = headerHtml + tabsHtml + contentHtml;
+                lucide.createIcons({ root: el });
+                el.onmouseup = (e) => { if (state.ui.connectingFrom && state.ui.connectingFrom !== table.id) { e.stopPropagation(); app.completeConnection(table.id); } };
+                el.onmouseleave = (e) => { if (state.ui.connectingFrom === table.id && !state.ui.showConnectionLine) { app.enableConnectionLine(table.id); } };
             },
-            triggerImport: () => { document.getElementById('import-file').click(); },
-            handleFileSelect: (event) => {
-                const file = event.target.files[0]; if (!file) return;
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    try {
-                        const data = JSON.parse(e.target.result);
-                        if (data.tables && data.relations) {
-                            state.projectName = data.projectName || 'Database Schema';
-                            state.tables = data.tables; state.relations = data.relations; state.view = data.view || { x: 0, y: 0, scale: 1 };
-                            document.getElementById('project-name-input').value = state.projectName;
-                            app.saveState(); app.renderAll(); app.updateCanvasTransform(); app.showToast('Schema imported!');
-                        } else { alert('Invalid file'); }
-                    } catch (err) { alert('Error parsing JSON'); }
-                    event.target.value = '';
+
+            updateTablePosition: (tId, newX, newY) => {
+                const el = document.getElementById(tId);
+                if(el) {
+                    el.style.transform = `translate(${newX}px, ${newY}px)`;
+                }
+            },
+            
+            startDragTable: (e, id) => { 
+                if(e.target.closest('button') || e.target.closest('input') || e.target.closest('select')) return; 
+                e.preventDefault(); 
+                e.stopPropagation(); 
+                const table = state.tables.find(t => t.id === id); 
+                const el = document.getElementById(id); 
+                if(el) el.classList.add('dragging-table'); 
+                state.ui.draggingTable = { 
+                    id: id, 
+                    offsetX: e.clientX - (table.x * state.view.scale) - state.view.x, 
+                    offsetY: e.clientY - (table.y * state.view.scale) - state.view.y 
+                }; 
+            },
+
+            openModal: () => { 
+                const dbSelect = document.getElementById('new-table-db-select');
+                dbSelect.innerHTML = state.databases.map(db => `<option value="${db.id}">${db.name}</option>`).join('');
+                
+                const backdrop = document.getElementById('modal-backdrop'); 
+                const content = document.getElementById('modal-content'); 
+                backdrop.classList.remove('hidden'); 
+                setTimeout(() => { backdrop.classList.remove('opacity-0'); content.classList.remove('scale-95'); content.classList.add('scale-100'); }, 10); 
+                document.getElementById('new-table-name').focus(); 
+            },
+            
+            closeModal: () => { const backdrop = document.getElementById('modal-backdrop'); const content = document.getElementById('modal-content'); backdrop.classList.add('opacity-0'); content.classList.remove('scale-100'); content.classList.add('scale-95'); setTimeout(() => { backdrop.classList.add('hidden'); }, 200); },
+            
+            addTable: () => {
+                const input = document.getElementById('new-table-name'); const rawName = input.value; if (!rawName.trim()) return;
+                const dbId = document.getElementById('new-table-db-select').value;
+                const name = app.formatName(rawName);
+                if (state.tables.find(t => t.name === name)) { alert('Table name exists'); return; }
+                const newTable = { 
+                    id: app.generateId(), dbId: dbId, name, x: -state.view.x + 200, y: -state.view.y + 200, color: CONSTANTS.COLORS[state.tables.length % CONSTANTS.COLORS.length], activeTab: 'fields', 
+                    fields: [ { id: app.generateId(), name: 'id', type: 'BIGINT', isPk: true, isNullable: false } ] 
                 };
-                reader.readAsText(file);
+                state.tables.push(newTable); app.saveState(); input.value = ''; app.closeModal(); app.renderAll();
             },
+            
+            deleteTable: (id) => { 
+                const table = state.tables.find(t => t.id === id);
+                if (!table) return;
+                state.ui.deletingTableId = id;
+                document.getElementById('delete-table-name').textContent = table.name;
+                const backdrop = document.getElementById('delete-table-modal-backdrop');
+                const content = document.getElementById('delete-table-modal-content');
+                backdrop.classList.remove('hidden');
+                setTimeout(() => {
+                    backdrop.classList.remove('opacity-0');
+                    content.classList.remove('scale-95');
+                    content.classList.add('scale-100');
+                    lucide.createIcons({ root: content });
+                }, 10);
+            },
+            
+            closeDeleteTableModal: () => {
+                const backdrop = document.getElementById('delete-table-modal-backdrop');
+                const content = document.getElementById('delete-table-modal-content');
+                backdrop.classList.add('opacity-0');
+                content.classList.remove('scale-100');
+                content.classList.add('scale-95');
+                setTimeout(() => {
+                    backdrop.classList.add('hidden');
+                    state.ui.deletingTableId = null;
+                }, 200);
+            },
+            
+            confirmDeleteTable: () => {
+                const id = state.ui.deletingTableId;
+                if (!id) return;
+                state.tables = state.tables.filter(t => t.id !== id);
+                state.relations = state.relations.filter(r => r.fromTableId !== id && r.toTableId !== id);
+                app.saveState();
+                app.renderAll();
+                app.closeDeleteTableModal();
+                app.showToast('Table deleted');
+            },
+
+            openMoveTableModal: (tableId) => {
+                const table = state.tables.find(t => t.id === tableId);
+                if (!table) return;
+                state.ui.movingTableId = tableId;
+                
+                document.getElementById('move-table-name-display').textContent = table.name;
+                
+                const dbSelect = document.getElementById('move-table-db-select');
+                dbSelect.innerHTML = state.databases.map(db => 
+                    `<option value="${db.id}" ${db.id === table.dbId ? 'selected' : ''}>${db.name}</option>`
+                ).join('');
+                
+                const backdrop = document.getElementById('move-table-modal-backdrop');
+                const content = document.getElementById('move-table-modal-content');
+                backdrop.classList.remove('hidden');
+                setTimeout(() => {
+                    backdrop.classList.remove('opacity-0');
+                    content.classList.remove('scale-95');
+                    content.classList.add('scale-100');
+                    lucide.createIcons({ root: content });
+                }, 10);
+            },
+            
+            closeMoveTableModal: () => {
+                const backdrop = document.getElementById('move-table-modal-backdrop');
+                const content = document.getElementById('move-table-modal-content');
+                backdrop.classList.add('opacity-0');
+                content.classList.remove('scale-100');
+                content.classList.add('scale-95');
+                setTimeout(() => {
+                    backdrop.classList.add('hidden');
+                    state.ui.movingTableId = null;
+                }, 200);
+            },
+            
+            confirmMoveTable: () => {
+                const id = state.ui.movingTableId;
+                if (!id) return;
+                
+                const newDbId = document.getElementById('move-table-db-select').value;
+                const table = state.tables.find(t => t.id === id);
+                
+                if (table && table.dbId !== newDbId) {
+                    table.dbId = newDbId;
+                    app.saveState();
+                    app.renderAll();
+                    app.showToast('Table moved successfully');
+                }
+                
+                app.closeMoveTableModal();
+            },
+
             requestClear: () => {
                 const backdrop = document.getElementById('clear-modal-backdrop'); const content = document.getElementById('clear-modal-content');
                 backdrop.classList.remove('hidden'); setTimeout(() => { backdrop.classList.remove('opacity-0'); content.classList.remove('scale-95'); content.classList.add('scale-100'); }, 10);
             },
+            
             closeClearModal: () => {
                 const backdrop = document.getElementById('clear-modal-backdrop'); const content = document.getElementById('clear-modal-content');
                 backdrop.classList.add('opacity-0'); content.classList.remove('scale-100'); content.classList.add('scale-95'); setTimeout(() => { backdrop.classList.add('hidden'); }, 200);
             },
+            
+            confirmClear: () => { state.tables = []; state.relations = []; app.saveState(); app.renderAll(); app.closeClearModal(); app.showToast('Board cleared'); },
+
             openExpandModal: (tableId) => {
                 const table = state.tables.find(t => t.id === tableId);
                 if (!table) return;
@@ -1435,7 +1787,7 @@
                 title.textContent = table.name;
                 body.setAttribute('data-table-id', tableId);
                 
-                const baseColor = table.color.split('-')[1];
+                const baseColor = table.color ? table.color.split('-')[1] : 'blue';
                 const tableName = app.formatName(table.name);
                 const migrationCmd = `php artisan make:migration create_${tableName}_table`;
                 const singularName = app.getSingular(table.name);
@@ -1593,6 +1945,7 @@
                     lucide.createIcons({ root: body });
                 }, 10);
             },
+            
             closeExpandModal: () => {
                 const backdrop = document.getElementById('expand-modal-backdrop');
                 const content = document.getElementById('expand-modal-content');
@@ -1603,69 +1956,30 @@
                     backdrop.classList.add('hidden');
                 }, 200);
             },
-            confirmClear: () => { state.tables = []; state.relations = []; app.saveState(); app.renderAll(); app.closeClearModal(); app.showToast('Board cleared'); },
-            addTable: () => {
-                const input = document.getElementById('new-table-name'); const rawName = input.value; if (!rawName.trim()) return;
-                const name = app.formatName(rawName);
-                if (state.tables.find(t => t.name === name)) { alert('Table name exists'); return; }
-                const newTable = { id: app.generateId(), name, x: -state.view.x + 200, y: -state.view.y + 200, color: CONSTANTS.COLORS[state.tables.length % CONSTANTS.COLORS.length], activeTab: 'fields', fields: [ { id: app.generateId(), name: 'id', type: 'BIGINT', isPk: true, isNullable: false } ] };
-                state.tables.push(newTable); app.saveState(); input.value = ''; app.closeModal(); app.renderAll();
-            },
-            deleteTable: (id) => { 
-                const table = state.tables.find(t => t.id === id);
-                if (!table) return;
-                state.ui.deletingTableId = id;
-                document.getElementById('delete-table-name').textContent = table.name;
-                const backdrop = document.getElementById('delete-table-modal-backdrop');
-                const content = document.getElementById('delete-table-modal-content');
-                backdrop.classList.remove('hidden');
-                setTimeout(() => {
-                    backdrop.classList.remove('opacity-0');
-                    content.classList.remove('scale-95');
-                    content.classList.add('scale-100');
-                    lucide.createIcons({ root: content });
-                }, 10);
-            },
-            closeDeleteTableModal: () => {
-                const backdrop = document.getElementById('delete-table-modal-backdrop');
-                const content = document.getElementById('delete-table-modal-content');
-                backdrop.classList.add('opacity-0');
-                content.classList.remove('scale-100');
-                content.classList.add('scale-95');
-                setTimeout(() => {
-                    backdrop.classList.add('hidden');
-                    state.ui.deletingTableId = null;
-                }, 200);
-            },
-            confirmDeleteTable: () => {
-                const id = state.ui.deletingTableId;
-                if (!id) return;
-                state.tables = state.tables.filter(t => t.id !== id);
-                state.relations = state.relations.filter(r => r.fromTableId !== id && r.toTableId !== id);
-                app.saveState();
-                app.renderAll();
-                app.closeDeleteTableModal();
-                app.showToast('Table deleted');
-            },
+
             enableRename: (tableId) => { state.ui.renamingTableId = tableId; app.renderTable(state.tables.find(t => t.id === tableId)); },
+            
             finishRename: (tableId, newName) => {
                 if(!newName.trim()) { state.ui.renamingTableId = null; app.renderTable(state.tables.find(t => t.id === tableId)); return; }
                 const table = state.tables.find(t => t.id === tableId);
                 if(table) { table.name = app.formatName(newName); app.saveState(); }
                 state.ui.renamingTableId = null; app.renderTable(table);
             },
+
             addField: (tableId) => {
                 const table = state.tables.find(t => t.id === tableId);
-                if (table) { table.fields.push({ id: app.generateId(), name: 'new_field', type: 'VARCHAR', isPk: false, isNullable: true, enumValues: '' }); app.saveState(); app.renderTable(table); app.updateStats(); }
+                if (table) { table.fields.push({ id: app.generateId(), name: 'new_field', type: 'VARCHAR', isPk: false, isNullable: true, enumValues: '' }); app.saveState(); app.renderTable(table); app.updateStats(); app.renderRegions(); }
             },
+            
             removeField: (tableId, fieldId) => {
                 const table = state.tables.find(t => t.id === tableId);
                 if (table) {
                     const initialRelCount = state.relations.length; state.relations = state.relations.filter(r => r.fkFieldId !== fieldId);
                     if (state.relations.length !== initialRelCount) { app.drawConnections(); app.updateStats(); }
-                    table.fields = table.fields.filter(f => f.id !== fieldId); app.saveState(); app.renderTable(table);
+                    table.fields = table.fields.filter(f => f.id !== fieldId); app.saveState(); app.renderTable(table); app.renderRegions();
                 }
             },
+            
             updateField: (tableId, fieldId, key, value) => {
                 const table = state.tables.find(t => t.id === tableId); const field = table.fields.find(f => f.id === fieldId);
                 if (field) {
@@ -1686,23 +2000,38 @@
                     if (key === 'type') app.renderTable(table); app.saveState();
                 }
             },
+            
             addEnumVal: (tableId, fieldId, value) => {
                 if (!value.trim()) return; const table = state.tables.find(t => t.id === tableId); const field = table.fields.find(f => f.id === fieldId);
                 if (field) {
                     let raw = field.enumValues ? field.enumValues.split(',') : []; let clean = raw.map(v => v.trim().replace(/^['"]|['"]$/g, '')).filter(v => v);
                     if (!clean.includes(value.trim())) clean.push(value.trim()); field.enumValues = clean.map(v => `'${v}'`).join(',');
-                    app.saveState(); app.renderTable(table);
+                    app.saveState(); app.renderTable(table); app.renderRegions();
                     setTimeout(() => { const el = document.getElementById(tableId); if(el) { const input = el.querySelector(`input[data-enum-input="${fieldId}"]`); if(input) input.focus(); } }, 0);
                 }
             },
+            
             removeEnumVal: (tableId, fieldId, valueToRemove) => {
                 const table = state.tables.find(t => t.id === tableId); const field = table.fields.find(f => f.id === fieldId);
                 if (field) {
                     let raw = field.enumValues ? field.enumValues.split(',') : []; let clean = raw.map(v => v.trim().replace(/^['"]|['"]$/g, '')).filter(v => v);
                     clean = clean.filter(v => v !== valueToRemove); field.enumValues = clean.map(v => `'${v}'`).join(',');
-                    app.saveState(); app.renderTable(table);
+                    app.saveState(); app.renderTable(table); app.renderRegions();
                 }
             },
+            
+            toggleFieldProp: (tableId, fieldId, prop) => {
+                const table = state.tables.find(t => t.id === tableId);
+                const field = table.fields.find(f => f.id === fieldId);
+                if (field) {
+                    if (prop === 'isNullable' && field.isPk) return;
+                    field[prop] = !field[prop];
+                    app.saveState();
+                    if (state.ui.activeView === 'board') app.renderTable(table);
+                    else app.renderListCard(table);
+                }
+            },
+            
             setTab: (tableId, tabName) => { 
                 const table = state.tables.find(t => t.id === tableId); 
                 if(table) { 
@@ -1713,20 +2042,17 @@
                     } else if (state.ui.activeView === 'list') {
                         app.renderListCard(table);
                     }
-                    // Tree view doesn't have tabs currently
                 } 
             },
+            
             changeSqlDialect: (dialect) => {
                 state.ui.sqlDialect = dialect;
                 app.saveState();
                 
-                // Check if expand modal is open and update it
                 const modalBackdrop = document.getElementById('expand-modal-backdrop');
                 if (modalBackdrop && !modalBackdrop.classList.contains('hidden')) {
-                    // Modal is open, get the current table ID from the modal title or body
                     const modalBody = document.getElementById('expand-modal-body');
                     if (modalBody) {
-                        // Find which table's data is being displayed by checking for a data attribute we can add
                         const tableId = modalBody.getAttribute('data-table-id');
                         if (tableId) {
                             app.openExpandModal(tableId);
@@ -1734,7 +2060,6 @@
                     }
                 }
                 
-                // Re-render based on active view
                 if (state.ui.activeView === 'board') {
                     app.renderAll();
                 } else if (state.ui.activeView === 'list') {
@@ -1743,7 +2068,9 @@
                     app.renderTreeView();
                 }
             },
+
             toggleRelationType: (relationId) => { const relation = state.relations.find(r => r.id === relationId); if (relation) { relation.type = relation.type === '1:n' ? '1:1' : '1:n'; app.saveState(); app.drawConnections(); } },
+            
             highlightRelation: (relationId, isHover) => {
                 const badge = document.querySelector(`[data-badge-relation-id="${relationId}"]`);
                 const path = document.querySelector(`path[data-relation-id="${relationId}"]`);
@@ -1755,6 +2082,7 @@
                     if (path) path.classList.remove('connection-line-hover');
                 }
             },
+            
             selectRelation: (relationId) => {
                 if (state.ui.selectedRelation === relationId) {
                     state.ui.selectedRelation = null;
@@ -1763,21 +2091,24 @@
                 }
                 app.drawConnections();
             },
+            
             deleteRelation: (relId) => {
                 if(!confirm('Remove relation?')) return; const rel = state.relations.find(r => r.id === relId);
                 if (rel) { const table = state.tables.find(t => t.id === rel.toTableId); if (table) { const field = table.fields.find(f => f.id === rel.fkFieldId); if (field) { field.isFk = false; app.renderTable(table); } } }
                 state.relations = state.relations.filter(r => r.id !== relId); app.saveState(); app.drawConnections(); app.updateStats();
             },
+
+            getTableHeight: (t) => {
+                const headerHeight = 52;
+                const tabsHeight = 44;
+                const fieldHeight = 42;
+                const footerHeight = 56;
+                const enumPadding = t.fields.some(f => f.type === 'ENUM' && f.enumValues) ? 40 : 0;
+                return headerHeight + tabsHeight + (t.fields.length * fieldHeight) + footerHeight + enumPadding + 20;
+            },
+            
             autoLayout: () => {
                 const spacingX = 480; const spacingY = 120;
-                const getTableHeight = (t) => {
-                    const headerHeight = 52;
-                    const tabsHeight = 44;
-                    const fieldHeight = 42;
-                    const footerHeight = 56;
-                    const enumPadding = t.fields.some(f => f.type === 'ENUM' && f.enumValues) ? 40 : 0;
-                    return headerHeight + tabsHeight + (t.fields.length * fieldHeight) + footerHeight + enumPadding + 20;
-                };
                 const adj = {}; const revAdj = {};
                 state.tables.forEach(t => { adj[t.id] = []; revAdj[t.id] = []; });
                 state.relations.forEach(r => { if(adj[r.fromTableId]) adj[r.fromTableId].push(r.toTableId); if(revAdj[r.toTableId]) revAdj[r.toTableId].push(r.fromTableId); });
@@ -1798,17 +2129,17 @@
                         levelGroups[l].sort((aId, bId) => {
                             const getAvgParentY = (nodeId) => {
                                 const parents = revAdj[nodeId]; if (parents.length === 0) return 0;
-                                const sum = parents.reduce((acc, pid) => { const pPos = finalPositions[pid]; const pTable = state.tables.find(pt => pt.id === pid); return acc + pPos.y + (getTableHeight(pTable) / 2); }, 0);
+                                const sum = parents.reduce((acc, pid) => { const pPos = finalPositions[pid]; const pTable = state.tables.find(pt => pt.id === pid); return acc + pPos.y + (app.getTableHeight(pTable) / 2); }, 0);
                                 return sum / parents.length;
                             };
                             return getAvgParentY(aId) - getAvgParentY(bId);
                         });
                     }
                     levelGroups[l].forEach(tId => {
-                        const table = state.tables.find(t => t.id === tId); const height = getTableHeight(table);
+                        const table = state.tables.find(t => t.id === tId); const height = app.getTableHeight(table);
                         let desiredCenterY = 0; const parents = revAdj[tId];
                         if (parents.length > 0) {
-                            const parentCenters = parents.map(p => { const pPos = finalPositions[p]; const pTable = state.tables.find(pt => pt.id === p); return pPos.y + (getTableHeight(pTable) / 2); });
+                            const parentCenters = parents.map(p => { const pPos = finalPositions[p]; const pTable = state.tables.find(pt => pt.id === p); return pPos.y + (app.getTableHeight(pTable) / 2); });
                             desiredCenterY = parentCenters.reduce((a,b)=>a+b,0) / parentCenters.length;
                         } else { desiredCenterY = 100; }
                         let desiredTop = desiredCenterY - (height / 2); let safeTop = desiredTop;
@@ -1819,23 +2150,24 @@
                 state.tables.forEach(t => { if (finalPositions[t.id]) { t.x = finalPositions[t.id].x; t.y = finalPositions[t.id].y; } });
                 state.view.x = 50; state.view.y = 50; app.saveState(); app.updateCanvasTransform(); app.renderAll(); 
             },
+
             dragFieldStart: (e, tableId, index) => { e.stopPropagation(); state.ui.draggingField = { tableId, index }; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', JSON.stringify({ tableId, index })); requestAnimationFrame(() => { const row = e.target.closest('.field-row-container'); if (row) row.classList.add('dragging-row'); }); },
-            dragFieldEnd: (e, tableId) => { document.querySelectorAll('.dragging-row').forEach(el => el.classList.remove('dragging-row')); state.ui.draggingField = null; },
+            dragFieldEnd: (e, tableId) => { document.querySelectorAll('.dragging-row').forEach(el => el.classList.remove('dragging-row')); state.ui.draggingField = null; app.renderRegions(); },
             dragFieldOver: (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; },
             dropField: (e, targetTableId, targetIndex) => {
                 e.stopPropagation(); e.preventDefault(); const source = state.ui.draggingField; if (!source) return;
                 const sourceTable = state.tables.find(t => t.id === source.tableId); const targetTable = state.tables.find(t => t.id === targetTableId); if (!sourceTable || !targetTable) return;
                 const [movedField] = sourceTable.fields.splice(source.index, 1);
                 if (typeof targetIndex !== 'undefined') { targetTable.fields.splice(targetIndex, 0, movedField); } else { targetTable.fields.push(movedField); }
-                app.saveState(); app.renderTable(sourceTable); if (source.tableId !== targetTableId) { app.renderTable(targetTable); } state.ui.draggingField = null;
+                app.saveState(); app.renderTable(sourceTable); if (source.tableId !== targetTableId) { app.renderTable(targetTable); } state.ui.draggingField = null; app.renderRegions();
             },
             dropFieldOnContainer: (e, targetTableId) => { e.preventDefault(); app.dropField(e, targetTableId); },
+            
             updateCanvasTransform: () => { const world = document.getElementById('canvas-world'); const container = document.getElementById('canvas-container'); world.style.transform = `translate(${state.view.x}px, ${state.view.y}px) scale(${state.view.scale})`; const gridSize = 20 * state.view.scale; container.style.backgroundSize = `${gridSize}px ${gridSize}px`; container.style.backgroundPosition = `${state.view.x}px ${state.view.y}px`; },
             resetView: () => { state.view = { x: 0, y: 0, scale: 1 }; app.saveState(); app.updateCanvasTransform(); },
             zoomIn: () => { state.view.scale = Math.min(state.view.scale * 1.2, 3); app.saveState(); app.updateCanvasTransform(); },
             zoomOut: () => { state.view.scale = Math.max(state.view.scale * 0.8, 0.2); app.saveState(); app.updateCanvasTransform(); },
-            openModal: () => { const backdrop = document.getElementById('modal-backdrop'); const content = document.getElementById('modal-content'); backdrop.classList.remove('hidden'); setTimeout(() => { backdrop.classList.remove('opacity-0'); content.classList.remove('scale-95'); content.classList.add('scale-100'); }, 10); document.getElementById('new-table-name').focus(); },
-            closeModal: () => { const backdrop = document.getElementById('modal-backdrop'); const content = document.getElementById('modal-content'); backdrop.classList.add('opacity-0'); content.classList.remove('scale-100'); content.classList.add('scale-95'); setTimeout(() => { backdrop.classList.add('hidden'); }, 200); },
+            
             startConnectionDrag: (e, id) => { e.stopPropagation(); e.preventDefault(); state.ui.connectingFrom = id; state.ui.showConnectionLine = false; app.updateUI(); },
             enableConnectionLine: (id) => { if (state.ui.connectingFrom === id) { state.ui.showConnectionLine = true; app.drawConnections(); } },
             cancelConnection: () => { state.ui.connectingFrom = null; state.ui.showConnectionLine = false; app.updateUI(); },
@@ -1844,11 +2176,13 @@
                 const exists = state.relations.find(r => r.fromTableId === sourceId && r.toTableId === targetId); if (exists) { app.cancelConnection(); return; }
                 const sourceTable = state.tables.find(t => t.id === sourceId); const targetTable = state.tables.find(t => t.id === targetId);
                 const fieldName = `${app.getSingular(sourceTable.name)}_id`; let field = targetTable.fields.find(f => f.name === fieldName); let fieldId;
-                if (!field) { fieldId = app.generateId(); targetTable.fields.push({ id: fieldId, name: fieldName, type: 'foreignId', isPk: false, isNullable: true, isFk: true }); app.renderTable(targetTable); } else { fieldId = field.id; if(!field.isFk) { field.isFk = true; app.renderTable(targetTable); } }
+                if (!field) { fieldId = app.generateId(); targetTable.fields.push({ id: fieldId, name: fieldName, type: 'foreignId', isPk: false, isNullable: true, isFk: true }); app.renderTable(targetTable); app.renderRegions(); } else { fieldId = field.id; if(!field.isFk) { field.isFk = true; app.renderTable(targetTable); } }
                 state.relations.push({ id: app.generateId(), fromTableId: sourceId, toTableId: targetId, type: '1:n', fkFieldId: fieldId });
                 app.saveState(); app.cancelConnection(); app.drawConnections(); 
             },
+            
             updateStats: () => { document.getElementById('stats-display').innerHTML = `<b>${state.tables.length}</b> tables &bull; <b>${state.relations.length}</b> relations`; },
+            
             updateUI: () => {
                 const feedback = document.getElementById('connection-feedback');
                 if (state.ui.connectingFrom) {
@@ -1856,6 +2190,7 @@
                 } else { feedback.classList.add('hidden'); document.querySelectorAll('.table-card').forEach(el => el.classList.remove('ring-4', 'ring-indigo-300')); }
                 app.drawConnections();
             },
+
             getAnchorPoint: (tableId, fieldId, side) => {
                 const tableEl = document.getElementById(tableId); if (!tableEl) return { x: 0, y: 0 }; 
                 let targetEl = null; if (fieldId) { targetEl = tableEl.querySelector(`[data-field-id="${fieldId}"]`); } if (!targetEl) { targetEl = tableEl.querySelector('.table-header'); }
@@ -1864,17 +2199,115 @@
                 const x = side === 'left' ? (rect.left - container.left - state.view.x) / state.view.scale : (rect.right - container.left - state.view.x) / state.view.scale;
                 return { x, y: centerY };
             },
+            
             calculateSmartPath: (x1, y1, s1, x2, y2, s2) => {
                 const stub = 20; const sx1 = s1 === 'right' ? x1 + stub : x1 - stub; const sx2 = s2 === 'right' ? x2 + stub : x2 - stub;
                 const dx = Math.abs(sx2 - sx1); const controlX = Math.max(dx * 0.5, 60); 
                 const cx1 = s1 === 'right' ? sx1 + controlX : sx1 - controlX; const cx2 = s2 === 'right' ? sx2 + controlX : sx2 - controlX;
                 return `M ${x1} ${y1} L ${sx1} ${y1} C ${cx1} ${y1}, ${cx2} ${y2}, ${sx2} ${y2} L ${x2} ${y2}`;
             },
+            
             calculateBezierMidpoint: (x1, y1, cx1, cy1, cx2, cy2, x2, y2) => {
                 const t = 0.5; const mt = 1 - t; const mt2 = mt * mt; const mt3 = mt2 * mt; const t2 = t * t; const t3 = t2 * t;
                 const x = (mt3 * x1) + (3 * mt2 * t * cx1) + (3 * mt * t2 * cx2) + (t3 * x2); const y = (mt3 * y1) + (3 * mt2 * t * cy1) + (3 * mt * t2 * cy2) + (t3 * y2);
                 return { x, y };
             },
+            
+            enableRenameDB: (dbId) => {
+                state.ui.renamingDbId = dbId;
+                app.renderRegions();
+            },
+            
+            finishRenameDB: (dbId, newName) => {
+                if(!newName.trim()) { state.ui.renamingDbId = null; app.renderRegions(); return; }
+                const db = state.databases.find(d => d.id === dbId);
+                if(db) { db.name = newName.trim(); app.saveState(); }
+                state.ui.renamingDbId = null; 
+                app.renderRegions();
+                app.renderDBManagerList();
+            },
+
+            startDragDB: (e, dbId) => {
+                if(e.target.tagName.toLowerCase() === 'input') return;
+                e.preventDefault();
+                e.stopPropagation();
+                const initialTables = state.tables.filter(t => t.dbId === dbId).map(t => ({ id: t.id, x: t.x, y: t.y }));
+                state.ui.draggingDB = {
+                    id: dbId,
+                    startX: e.clientX,
+                    startY: e.clientY,
+                    initialTables: initialTables
+                };
+            },
+            
+            renderRegions: () => {
+                const layer = document.getElementById('regions-layer');
+                let html = '';
+
+                state.databases.forEach(db => {
+                    const dbTables = state.tables.filter(t => t.dbId === db.id);
+                    if (dbTables.length === 0) return;
+                    
+                    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                    dbTables.forEach(t => {
+                        minX = Math.min(minX, t.x);
+                        minY = Math.min(minY, t.y);
+                        maxX = Math.max(maxX, t.x + 288); // 72 tailwind classes width (18rem)
+                        maxY = Math.max(maxY, t.y + app.getTableHeight(t));
+                    });
+                    
+                    const padding = 40;
+                    const left = minX - padding;
+                    const top = minY - padding - 30; // Extra room for label
+                    const width = maxX - minX + padding * 2;
+                    const height = maxY - minY + padding * 2 + 30;
+                    
+                    let titleContent = `<span>${db.name}</span>`;
+                    if (state.ui.renamingDbId === db.id) {
+                        titleContent = `<input type="text" value="${db.name}" class="bg-indigo-50/50 border border-indigo-200 rounded px-2 py-0.5 text-xs font-black text-indigo-700 outline-none w-40" onblur="app.finishRenameDB('${db.id}', this.value)" onkeydown="if(event.key === 'Enter') app.finishRenameDB('${db.id}', this.value)" onmousedown="event.stopPropagation()">`;
+                        setTimeout(() => { const input = layer.querySelector('input[type="text"]'); if(input) { input.focus(); input.select(); } }, 10);
+                    }
+                    
+                    // Removed 'transition-all duration-75' to eliminate rubber-banding visual lag
+                    // Added id 'region-{db.id}' to target specific element for performance updates
+                    html += `
+                        <div id="region-${db.id}" class="absolute border-[3px] border-dashed border-indigo-200/70 rounded-3xl bg-indigo-50/40" style="left: ${left}px; top: ${top}px; width: ${width}px; height: ${height}px; z-index: 0;">
+                            <div class="absolute -top-4 left-6 bg-white px-4 py-1.5 rounded-full text-xs font-black text-indigo-700 border-2 border-indigo-100 shadow-md flex items-center gap-2 cursor-grab active:cursor-grabbing pointer-events-auto hover:bg-indigo-50 transition-colors" onmousedown="app.startDragDB(event, '${db.id}')" ondblclick="app.enableRenameDB('${db.id}')" title="Drag to move all tables in container. Double click to rename.">
+                                <i data-lucide="server" class="w-4 h-4 pointer-events-none"></i> ${titleContent}
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                layer.innerHTML = html;
+                lucide.createIcons({ root: layer });
+            },
+
+            updateRegionBounds: () => {
+                // Highly performant region calculation to run 60 times a second without DOM recreation
+                state.databases.forEach(db => {
+                    const dbTables = state.tables.filter(t => t.dbId === db.id);
+                    if (dbTables.length === 0) return;
+                    
+                    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                    dbTables.forEach(t => {
+                        minX = Math.min(minX, t.x);
+                        minY = Math.min(minY, t.y);
+                        maxX = Math.max(maxX, t.x + 288);
+                        maxY = Math.max(maxY, t.y + app.getTableHeight(t));
+                    });
+                    
+                    const padding = 40;
+                    const regionEl = document.getElementById(`region-${db.id}`);
+                    if (regionEl) {
+                        regionEl.style.left = `${minX - padding}px`;
+                        regionEl.style.top = `${minY - padding - 30}px`;
+                        regionEl.style.width = `${maxX - minX + padding * 2}px`;
+                        regionEl.style.height = `${maxY - minY + padding * 2 + 30}px`;
+                    }
+                });
+            },
+
             drawConnections: () => {
                 const svg = document.getElementById('connections-layer'); const labelsLayer = document.getElementById('labels-layer');
                 let svgHtml = `<defs> <marker id="marker-one" markerWidth="10" markerHeight="10" refX="0" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,10 M0,5 L3,5" stroke="#94a3b8" stroke-width="1.5" fill="none" stroke-linecap="round"/></marker> <marker id="marker-many" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M0,5 L8,5 M8,0 L0,5 L8,10" stroke="#94a3b8" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></marker> <marker id="marker-one-end" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M8,0 L8,10 M0,5 L8,5" stroke="#94a3b8" stroke-width="1.5" fill="none" stroke-linecap="round"/></marker> <marker id="marker-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L8,4 L0,8 L2,4 Z" fill="#6366f1" /></marker> </defs>`;
@@ -1910,6 +2343,7 @@
                 }
                 svg.innerHTML = svgHtml; labelsLayer.innerHTML = labelsHtml;
             },
+
             renderAll: () => {
                 const layer = document.getElementById('nodes-layer'); layer.innerHTML = '';
                 state.tables.forEach(table => {
@@ -1919,65 +2353,24 @@
                     layer.appendChild(div); app.renderTable(table);
                 });
                 app.updateStats();
-                // Defer drawConnections to ensure DOM is fully rendered
+                app.renderRegions();
+                
                 requestAnimationFrame(() => {
                     app.drawConnections();
                 });
             },
-            renderTable: (table) => {
-                const el = document.getElementById(table.id); if (!el) return;
-                const baseColor = table.color.split('-')[1]; const headerBg = `bg-${baseColor}-600`;
-                let titleContent = `<div class="font-bold text-white text-sm pointer-events-auto cursor-text truncate tracking-wide" ondblclick="app.enableRename('${table.id}')" title="Double click to rename">${table.name}</div>`;
-                if (state.ui.renamingTableId === table.id) {
-                    titleContent = `<input type="text" value="${table.name}" class="w-full bg-white/10 text-white placeholder-white/50 border border-white/30 rounded px-1.5 py-0.5 text-sm font-bold outline-none focus:bg-white/20 focus:border-white" onblur="app.finishRename('${table.id}', this.value)" onkeydown="if(event.key === 'Enter') app.finishRename('${table.id}', this.value)" autoFocus >`;
-                    setTimeout(() => { const input = el.querySelector('input[type="text"]'); if(input) { input.focus(); input.select(); } }, 10);
-                }
-                const headerHtml = `<div class="table-header flex items-center justify-between p-3 ${headerBg} cursor-grab active:cursor-grabbing rounded-t-xl select-none group relative overflow-hidden" onmousedown="app.startDragTable(event, '${table.id}')"> <div class="absolute inset-0 bg-gradient-to-tr from-black/5 to-transparent pointer-events-none"></div> <div class="flex items-center gap-2 flex-1 mr-2 relative z-10"> <i data-lucide="table-2" class="w-4 h-4 text-white/70"></i> ${titleContent} </div> <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity relative z-10"> <button onclick="event.stopPropagation(); app.openExpandModal('${table.id}')" class="p-1.5 rounded bg-white/10 hover:bg-white/20 text-white/90 transition-colors backdrop-blur-sm shadow-sm" title="Expand View"> <i data-lucide="maximize-2" class="w-3 h-3"></i> </button> <button onmousedown="app.startConnectionDrag(event, '${table.id}')" class="p-1.5 rounded bg-white/10 hover:bg-white/20 text-white/90 transition-colors backdrop-blur-sm shadow-sm" title="Drag to Connect"> <i data-lucide="link" class="w-3 h-3"></i> </button> <button onclick="event.stopPropagation(); app.deleteTable('${table.id}')" class="p-1.5 rounded bg-white/10 hover:bg-rose-500 text-white/90 hover:text-white transition-colors backdrop-blur-sm shadow-sm" title="Delete Table"> <i data-lucide="trash-2" class="w-3 h-3"></i> </button> </div> </div>`;
-                const tabsHtml = `<div class="flex text-[11px] font-semibold border-b border-slate-100 bg-white"> <button onclick="app.setTab('${table.id}', 'fields')" class="flex-1 py-2.5 text-center transition-colors relative ${table.activeTab === 'fields' ? `text-${baseColor}-600 bg-${baseColor}-50/50` : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}"> Structure ${table.activeTab === 'fields' ? `<span class="absolute bottom-0 left-0 w-full h-[2px] bg-${baseColor}-600"></span>` : ''} </button> <button onclick="app.setTab('${table.id}', 'sql')" class="flex-1 py-2.5 text-center transition-colors relative ${table.activeTab === 'sql' ? `text-${baseColor}-600 bg-${baseColor}-50/50` : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}"> SQL ${table.activeTab === 'sql' ? `<span class="absolute bottom-0 left-0 w-full h-[2px] bg-${baseColor}-600"></span>` : ''} </button> <button onclick="app.setTab('${table.id}', 'laravel')" class="flex-1 py-2.5 text-center transition-colors relative ${table.activeTab === 'laravel' ? `text-${baseColor}-600 bg-${baseColor}-50/50` : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}"> Laravel ${table.activeTab === 'laravel' ? `<span class="absolute bottom-0 left-0 w-full h-[2px] bg-${baseColor}-600"></span>` : ''} </button> </div>`;
-                let contentHtml = '';
-                if (table.activeTab === 'fields') {
-                    const fieldsHtml = table.fields.map((f, index) => {
-                        let enumHtml = '';
-                        if (f.type === 'ENUM') {
-                            const raw = f.enumValues ? f.enumValues.split(',') : []; const tags = raw.map(v => v.trim().replace(/^['"]|['"]$/g, '')).filter(v => v);
-                            enumHtml = `<div class="pl-8 pr-2 pb-2 flex flex-wrap gap-1 items-center mt-1"> ${tags.map(tag => `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10px] border border-slate-200 font-medium group/tag"> ${tag} <button onclick="app.removeEnumVal('${table.id}', '${f.id}', '${tag}')" onmousedown="event.stopPropagation()" class="hover:text-rose-500 flex items-center justify-center w-3 h-3 rounded-full hover:bg-slate-200 text-xs font-bold leading-none transition-colors">&times;</button> </span>`).join('')} <input type="text" data-enum-input="${f.id}" placeholder="+ value" onkeydown="if(event.key === 'Enter') { app.addEnumVal('${table.id}', '${f.id}', this.value); }" onmousedown="event.stopPropagation()" class="flex-1 min-w-[50px] bg-transparent text-[10px] px-1.5 py-0.5 rounded border border-dashed border-slate-300 hover:border-${baseColor}-400 focus:border-${baseColor}-500 outline-none text-slate-600 placeholder:text-slate-400 transition-colors" > </div>`;
-                        }
-                        return `<div draggable="true" data-field-id="${f.id}" ondragstart="app.dragFieldStart(event, '${table.id}', ${index})" ondragover="app.dragFieldOver(event)" ondrop="app.dropField(event, '${table.id}', ${index})" ondragend="app.dragFieldEnd(event, '${table.id}')" class="field-row-container group flex flex-col relative transition-all border-b border-slate-50 last:border-0 hover:bg-slate-50/80"> <div class="flex items-center gap-2 p-2"> <div class="cursor-move text-slate-300 hover:text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity"> <i data-lucide="grip-vertical" class="w-3 h-3"></i> </div> <div class="w-5 flex justify-center shrink-0"> ${f.isPk ? `<i data-lucide="key" class="w-3.5 h-3.5 text-amber-500 fill-amber-500/20" title="Primary Key"></i>` : ''} ${f.isFk ? `<i data-lucide="link-2" class="w-3.5 h-3.5 text-blue-500" title="Foreign Key"></i>` : ''} ${!f.isPk && !f.isFk ? `<div class="w-1.5 h-1.5 rounded-full bg-slate-200"></div>` : ''} </div> <input type="text" value="${f.name}" onmousedown="event.stopPropagation()" onchange="app.updateField('${table.id}', '${f.id}', 'name', this.value)" class="flex-1 bg-transparent outline-none font-mono text-[13px] text-slate-700 min-w-0 placeholder:text-slate-300 focus:text-${baseColor}-600 font-medium transition-colors"> <div class="relative group/select"> <select onmousedown="event.stopPropagation()" onchange="app.updateField('${table.id}', '${f.id}', 'type', this.value)" class="appearance-none bg-slate-100 hover:bg-slate-200 text-[10px] text-slate-600 font-bold py-1 px-2 pr-6 rounded-md outline-none cursor-pointer transition-colors border border-transparent focus:border-${baseColor}-300 uppercase tracking-wide"> ${CONSTANTS.DATA_TYPES.map(t => `<option value="${t}" ${f.type === t ? 'selected' : ''}>${t}</option>`).join('')} </select> <i data-lucide="chevron-down" class="absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none"></i> </div> <button onmousedown="event.stopPropagation()" onclick="app.toggleFieldProp('${table.id}', '${f.id}', 'isNullable')" class="px-1.5 py-0.5 rounded text-[9px] font-bold border transition-colors ${f.isNullable ? 'bg-indigo-100 text-indigo-600 border-indigo-200' : 'bg-transparent text-slate-300 border-transparent hover:bg-slate-100 hover:text-slate-50'}" title="Toggle Nullable" ${f.isPk ? 'disabled style="opacity:0.3"' : ''}>N</button> <button onmousedown="event.stopPropagation()" onclick="app.removeField('${table.id}', '${f.id}')" class="opacity-0 group-hover:opacity-100 p-1 text-slate-300 hover:text-rose-500 transition-colors"> <i data-lucide="x" class="w-3.5 h-3.5"></i> </button> </div> ${enumHtml} </div>`;
-                    }).join('');
-                    contentHtml = `<div class="flex flex-col py-1 bg-white min-h-[50px] rounded-b-xl" ondragover="app.dragFieldOver(event)" ondrop="app.dropFieldOnContainer(event, '${table.id}')"> ${fieldsHtml} <div class="px-2 pt-2 pb-2"> <button onclick="app.addField('${table.id}')" class="w-full flex items-center justify-center gap-2 text-xs font-semibold text-slate-400 hover:text-${baseColor}-600 hover:bg-${baseColor}-50 p-2 rounded-lg transition-all border border-dashed border-slate-200 hover:border-${baseColor}-200"> <i data-lucide="plus" class="w-3.5 h-3.5"></i> <span>Add Field</span> </button> </div> </div>`;
-                } else if (table.activeTab === 'sql') {
-                    contentHtml = `<div class="p-0 bg-slate-50/50 rounded-b-xl overflow-hidden h-full flex flex-col"> <div class="px-2 pt-2 pb-1 border-b border-slate-100 bg-white flex items-center justify-between"> <span class="text-[10px] text-slate-500 font-semibold">Database:</span> <div class="relative"> <select onchange="app.changeSqlDialect(this.value)" class="appearance-none bg-slate-100 hover:bg-slate-200 text-[10px] text-slate-700 font-semibold py-1 px-2 pr-6 rounded-md outline-none cursor-pointer transition-colors border border-slate-200"> <option value="mysql" ${state.ui.sqlDialect === 'mysql' ? 'selected' : ''}>MySQL</option> <option value="postgresql" ${state.ui.sqlDialect === 'postgresql' ? 'selected' : ''}>PostgreSQL</option> <option value="sqlite" ${state.ui.sqlDialect === 'sqlite' ? 'selected' : ''}>SQLite</option> <option value="sqlserver" ${state.ui.sqlDialect === 'sqlserver' ? 'selected' : ''}>SQL Server</option> </select> <i data-lucide="chevron-down" class="absolute right-1 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 pointer-events-none"></i> </div> </div> <div class="overflow-auto max-h-64 p-3 custom-scrollbar"> <pre class="code-block text-slate-600 text-xs">${generators.sql(table)}</pre> </div> <div class="p-2 border-t border-slate-100 bg-white"> <button onclick="app.copyToClipboard(generators.sql(state.tables.find(t=>t.id=='${table.id}')))" class="w-full flex items-center justify-center gap-2 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-600 py-2 rounded-lg transition-colors"> <i data-lucide="copy" class="w-3 h-3"></i> Copy SQL </button> </div> </div>`;
-                } else if (table.activeTab === 'laravel') {
-                    contentHtml = `<div class="p-0 bg-slate-50/50 rounded-b-xl overflow-hidden h-full flex flex-col"> <div class="overflow-auto max-h-64 p-3 custom-scrollbar"> <pre class="code-block text-indigo-600 text-xs">${generators.laravel(table)}</pre> </div> <div class="p-2 border-t border-slate-100 bg-white"> <button onclick="app.copyToClipboard(generators.laravel(state.tables.find(t=>t.id=='${table.id}')))" class="w-full flex items-center justify-center gap-2 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-600 py-2 rounded-lg transition-colors"> <i data-lucide="copy" class="w-3 h-3"></i> Copy Migration </button> </div> </div>`;
-                }
-                el.innerHTML = headerHtml + tabsHtml + contentHtml;
-                lucide.createIcons({ root: el });
-                el.onmouseup = (e) => { if (state.ui.connectingFrom && state.ui.connectingFrom !== table.id) { e.stopPropagation(); app.completeConnection(table.id); } };
-                el.onmouseleave = (e) => { if (state.ui.connectingFrom === table.id && !state.ui.showConnectionLine) { app.enableConnectionLine(table.id); } };
-            },
-            toggleFieldProp: (tableId, fieldId, prop) => {
-                const table = state.tables.find(t => t.id === tableId);
-                const field = table.fields.find(f => f.id === fieldId);
-                if (field) {
-                    if (prop === 'isNullable' && field.isPk) return;
-                    field[prop] = !field[prop];
-                    app.saveState();
-                    if (state.ui.activeView === 'board') app.renderTable(table);
-                    else app.renderListCard(table);
-                }
-            },
-            updateTablePosition: (tId, newX, newY) => {
-                const el = document.getElementById(tId);
-                if(el) {
-                    el.style.transform = `translate(${newX}px, ${newY}px)`;
-                }
-            },
-            startDragTable: (e, id) => { if(e.target.closest('button') || e.target.closest('input') || e.target.closest('select')) return; e.preventDefault(); e.stopPropagation(); const table = state.tables.find(t => t.id === id); const el = document.getElementById(id); if(el) el.classList.add('dragging-table'); state.ui.draggingTable = { id: id, offsetX: e.clientX - (table.x * state.view.scale) - state.view.x, offsetY: e.clientY - (table.y * state.view.scale) - state.view.y }; },
+
             attachListeners: () => {
                 const canvas = document.getElementById('canvas-container');
                 let lastMouseEvent = null;
 
-                canvas.addEventListener('mousedown', (e) => { if (e.target === canvas || e.target.id === 'connections-layer' || e.target.id === 'nodes-layer' || e.target.id === 'labels-layer') { state.ui.isDraggingCanvas = true; state.ui.dragStart = { x: e.clientX - state.view.x, y: e.clientY - state.view.y }; canvas.style.cursor = 'grabbing'; } });
+                canvas.addEventListener('mousedown', (e) => { 
+                    if (e.target === canvas || e.target.id === 'connections-layer' || e.target.id === 'nodes-layer' || e.target.id === 'labels-layer' || e.target.id === 'regions-layer') { 
+                        state.ui.isDraggingCanvas = true; 
+                        state.ui.dragStart = { x: e.clientX - state.view.x, y: e.clientY - state.view.y }; 
+                        canvas.style.cursor = 'grabbing'; 
+                    } 
+                });
                 
                 const handleMouseMove = () => {
                     if (!lastMouseEvent) return;
@@ -1985,31 +2378,18 @@
                     const rect = canvas.getBoundingClientRect();
                     state.ui.mousePos = { x: (e.clientX - rect.left - state.view.x) / state.view.scale, y: (e.clientY - rect.top - state.view.y) / state.view.scale };
                     
-                    // Auto-scroll when dragging connection near edges
                     if (state.ui.connectingFrom) {
-                        const edgeThreshold = 80; // pixels from edge to trigger scroll
-                        const scrollSpeed = 15; // pixels to scroll per frame
+                        const edgeThreshold = 80;
+                        const scrollSpeed = 15;
                         let scrolled = false;
                         
-                        if (e.clientX < edgeThreshold) {
-                            state.view.x += scrollSpeed;
-                            scrolled = true;
-                        } else if (e.clientX > window.innerWidth - edgeThreshold) {
-                            state.view.x -= scrollSpeed;
-                            scrolled = true;
-                        }
+                        if (e.clientX < edgeThreshold) { state.view.x += scrollSpeed; scrolled = true; } 
+                        else if (e.clientX > window.innerWidth - edgeThreshold) { state.view.x -= scrollSpeed; scrolled = true; }
                         
-                        if (e.clientY < edgeThreshold) {
-                            state.view.y += scrollSpeed;
-                            scrolled = true;
-                        } else if (e.clientY > window.innerHeight - edgeThreshold) {
-                            state.view.y -= scrollSpeed;
-                            scrolled = true;
-                        }
+                        if (e.clientY < edgeThreshold) { state.view.y += scrollSpeed; scrolled = true; } 
+                        else if (e.clientY > window.innerHeight - edgeThreshold) { state.view.y -= scrollSpeed; scrolled = true; }
                         
-                        if (scrolled) {
-                            app.updateCanvasTransform();
-                        }
+                        if (scrolled) { app.updateCanvasTransform(); }
                     }
                     
                     if (state.ui.isDraggingCanvas) {
@@ -2025,6 +2405,23 @@
                         table.y = (e.clientY - state.ui.draggingTable.offsetY - state.view.y) / state.view.scale;
                         app.updateTablePosition(tId, table.x, table.y);
                         app.drawConnections();
+                        app.updateRegionBounds(); // Changed from renderRegions to dramatically improve performance
+                    }
+                    
+                    if (state.ui.draggingDB) {
+                        const dx = (e.clientX - state.ui.draggingDB.startX) / state.view.scale;
+                        const dy = (e.clientY - state.ui.draggingDB.startY) / state.view.scale;
+                        
+                        state.ui.draggingDB.initialTables.forEach(initialT => {
+                            const table = state.tables.find(t => t.id === initialT.id);
+                            if (table) {
+                                table.x = initialT.x + dx;
+                                table.y = initialT.y + dy;
+                                app.updateTablePosition(table.id, table.x, table.y);
+                            }
+                        });
+                        app.drawConnections();
+                        app.updateRegionBounds(); // Changed from renderRegions to dramatically improve performance
                     }
                     
                     if (state.ui.connectingFrom) {
@@ -2037,7 +2434,7 @@
 
                 window.addEventListener('mousemove', (e) => {
                     lastMouseEvent = e;
-                    if (!state.ui.animationFrameId && (state.ui.isDraggingCanvas || state.ui.draggingTable || state.ui.connectingFrom)) {
+                    if (!state.ui.animationFrameId && (state.ui.isDraggingCanvas || state.ui.draggingTable || state.ui.draggingDB || state.ui.connectingFrom)) {
                         state.ui.animationFrameId = requestAnimationFrame(handleMouseMove);
                     }
                 });
@@ -2048,6 +2445,10 @@
                         const el = document.getElementById(state.ui.draggingTable.id);
                         if(el) el.classList.remove('dragging-table');
                         app.saveState();
+                    }
+                    if (state.ui.draggingDB) {
+                        app.saveState();
+                        state.ui.draggingDB = null;
                     }
                     state.ui.isDraggingCanvas = false;
                     state.ui.draggingTable = null;
