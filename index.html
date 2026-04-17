@@ -1610,7 +1610,7 @@
                             const raw = f.enumValues ? f.enumValues.split(',') : []; const tags = raw.map(v => v.trim().replace(/^['"]|['"]$/g, '')).filter(v => v);
                             enumHtml = `<div class="pl-8 pr-2 pb-2 flex flex-wrap gap-1 items-center mt-1"> ${tags.map(tag => `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10px] border border-slate-200 font-medium group/tag"> ${tag} <button onclick="app.removeEnumVal('${table.id}', '${f.id}', '${tag}')" onmousedown="event.stopPropagation()" class="hover:text-rose-500 flex items-center justify-center w-3 h-3 rounded-full hover:bg-slate-200 text-xs font-bold leading-none transition-colors">&times;</button> </span>`).join('')} <input type="text" data-enum-input="${f.id}" placeholder="+ value" onkeydown="if(event.key === 'Enter') { app.addEnumVal('${table.id}', '${f.id}', this.value); }" onmousedown="event.stopPropagation()" class="flex-1 min-w-[50px] bg-transparent text-[10px] px-1.5 py-0.5 rounded border border-dashed border-slate-300 hover:border-${baseColor}-400 focus:border-${baseColor}-500 outline-none text-slate-600 placeholder:text-slate-400 transition-colors" > </div>`;
                         }
-                        return `<div draggable="true" data-field-id="${f.id}" ondragstart="app.dragFieldStart(event, '${table.id}', ${index})" ondragover="app.dragFieldOver(event)" ondrop="app.dropField(event, '${table.id}', ${index})" ondragend="app.dragFieldEnd(event, '${table.id}')" class="field-row-container group flex flex-col relative transition-all border-b border-slate-50 last:border-0 hover:bg-slate-50/80"> <div class="flex items-center gap-2 p-2"> <div class="cursor-move text-slate-300 hover:text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity"> <i data-lucide="grip-vertical" class="w-3 h-3"></i> </div> <div class="w-5 flex justify-center shrink-0"> ${f.isPk ? `<i data-lucide="key" class="w-3.5 h-3.5 text-amber-500 fill-amber-500/20" title="Primary Key"></i>` : ''} ${f.isFk ? `<i data-lucide="link-2" class="w-3.5 h-3.5 text-blue-500" title="Foreign Key"></i>` : ''} ${!f.isPk && !f.isFk ? `<div class="w-1.5 h-1.5 rounded-full bg-slate-200"></div>` : ''} </div> <input type="text" value="${f.name}" onmousedown="event.stopPropagation()" onchange="app.updateField('${table.id}', '${f.id}', 'name', this.value)" class="flex-1 bg-transparent outline-none font-mono text-[13px] text-slate-700 min-w-0 placeholder:text-slate-300 focus:text-${baseColor}-600 font-medium transition-colors"> <div class="relative group/select"> <select onmousedown="event.stopPropagation()" onchange="app.updateField('${table.id}', '${f.id}', 'type', this.value)" class="appearance-none bg-slate-100 hover:bg-slate-200 text-[10px] text-slate-600 font-bold py-1 px-2 pr-6 rounded-md outline-none cursor-pointer transition-colors border border-transparent focus:border-${baseColor}-300 uppercase tracking-wide"> ${CONSTANTS.DATA_TYPES.map(t => `<option value="${t}" ${f.type === t ? 'selected' : ''}>${t}</option>`).join('')} </select> <i data-lucide="chevron-down" class="absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none"></i> </div> <button onmousedown="event.stopPropagation()" onclick="app.toggleFieldProp('${table.id}', '${f.id}', 'isNullable')" class="px-1.5 py-0.5 rounded text-[9px] font-bold border transition-colors ${f.isNullable ? 'bg-indigo-100 text-indigo-600 border-indigo-200' : 'bg-transparent text-slate-300 border-transparent hover:bg-slate-100 hover:text-slate-50'}" title="Toggle Nullable" ${f.isPk ? 'disabled style="opacity:0.3"' : ''}>N</button> <button onmousedown="event.stopPropagation()" onclick="app.removeField('${table.id}', '${f.id}')" class="opacity-0 group-hover:opacity-100 p-1 text-slate-300 hover:text-rose-500 transition-colors"> <i data-lucide="x" class="w-3.5 h-3.5"></i> </button> </div> ${enumHtml} </div>`;
+                        return `<div draggable="true" data-field-id="${f.id}" ondragstart="app.dragFieldStart(event, '${table.id}', ${index})" ondragover="app.dragFieldOver(event)" ondrop="app.dropField(event, '${table.id}', ${index})" ondragend="app.dragFieldEnd(event, '${table.id}')" class="field-row-container group flex flex-col relative transition-all border-b border-slate-50 last:border-0 hover:bg-slate-50/80"> <div class="flex items-center gap-2 p-2"> <div class="cursor-move text-slate-300 hover:text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity"> <i data-lucide="grip-vertical" class="w-3 h-3"></i> </div> <div class="w-5 flex justify-center shrink-0"> ${f.isPk ? `<i data-lucide="key" class="w-3.5 h-3.5 text-amber-500 fill-amber-500/20" title="Primary Key"></i>` : ''} ${f.isFk ? `<i data-lucide="link-2" class="w-3.5 h-3.5 text-blue-500" title="Foreign Key"></i>` : ''} ${!f.isPk && !f.isFk ? `<div class="w-1.5 h-1.5 rounded-full bg-slate-200"></div>` : ''} </div> <input type="text" value="${f.name}" title="${f.name}" oninput="this.title=this.value" onmousedown="event.stopPropagation()" onchange="app.updateField('${table.id}', '${f.id}', 'name', this.value)" class="flex-1 bg-transparent outline-none font-mono text-[13px] text-slate-700 min-w-0 placeholder:text-slate-300 focus:text-${baseColor}-600 font-medium transition-colors text-ellipsis"> <div class="relative group/select"> <select onmousedown="event.stopPropagation()" onchange="app.updateField('${table.id}', '${f.id}', 'type', this.value)" class="appearance-none bg-slate-100 hover:bg-slate-200 text-[10px] text-slate-600 font-bold py-1 px-2 pr-6 rounded-md outline-none cursor-pointer transition-colors border border-transparent focus:border-${baseColor}-300 uppercase tracking-wide"> ${CONSTANTS.DATA_TYPES.map(t => `<option value="${t}" ${f.type === t ? 'selected' : ''}>${t}</option>`).join('')} </select> <i data-lucide="chevron-down" class="absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none"></i> </div> <button onmousedown="event.stopPropagation()" onclick="app.toggleFieldProp('${table.id}', '${f.id}', 'isNullable')" class="px-1.5 py-0.5 rounded text-[9px] font-bold border transition-colors ${f.isNullable ? 'bg-indigo-100 text-indigo-600 border-indigo-200' : 'bg-transparent text-slate-300 border-transparent hover:bg-slate-100 hover:text-slate-50'}" title="Toggle Nullable" ${f.isPk ? 'disabled style="opacity:0.3"' : ''}>N</button> <button onmousedown="event.stopPropagation()" onclick="app.removeField('${table.id}', '${f.id}')" class="opacity-0 group-hover:opacity-100 p-1 text-slate-300 hover:text-rose-500 transition-colors"> <i data-lucide="x" class="w-3.5 h-3.5"></i> </button> </div> ${enumHtml} </div>`;
                     }).join('');
                     contentHtml = `<div class="flex flex-col py-1 bg-white min-h-[50px] rounded-b-xl" ondragover="app.dragFieldOver(event)" ondrop="app.dropFieldOnContainer(event, '${table.id}')"> ${fieldsHtml} <div class="px-2 pt-2 pb-2"> <button onclick="app.addField('${table.id}')" class="w-full flex items-center justify-center gap-2 text-xs font-semibold text-slate-400 hover:text-${baseColor}-600 hover:bg-${baseColor}-50 p-2 rounded-lg transition-all border border-dashed border-slate-200 hover:border-${baseColor}-200"> <i data-lucide="plus" class="w-3.5 h-3.5"></i> <span>Add Field</span> </button> </div> </div>`;
                 } else if (table.activeTab === 'sql') {
@@ -2108,47 +2108,134 @@
             },
             
             autoLayout: () => {
-                const spacingX = 480; const spacingY = 120;
-                const adj = {}; const revAdj = {};
-                state.tables.forEach(t => { adj[t.id] = []; revAdj[t.id] = []; });
-                state.relations.forEach(r => { if(adj[r.fromTableId]) adj[r.fromTableId].push(r.toTableId); if(revAdj[r.toTableId]) revAdj[r.toTableId].push(r.fromTableId); });
-                const nodeLevels = {}; state.tables.forEach(t => nodeLevels[t.id] = 0);
-                let changed = true; let iterations = 0;
-                while(changed && iterations < state.tables.length + 2) {
-                    changed = false;
-                    state.relations.forEach(r => { if (nodeLevels[r.toTableId] < nodeLevels[r.fromTableId] + 1) { nodeLevels[r.toTableId] = nodeLevels[r.fromTableId] + 1; changed = true; } });
-                    iterations++;
-                }
-                const levelGroups = []; Object.entries(nodeLevels).forEach(([id, lvl]) => { if (!levelGroups[lvl]) levelGroups[lvl] = []; levelGroups[lvl].push(id); });
-                const finalPositions = {}; const occupied = {};
-                state.tables.forEach(t => { finalPositions[t.id] = { x: (nodeLevels[t.id] || 0) * spacingX + 50, y: 0 }; });
-                const maxLevel = levelGroups.length - 1;
-                for (let l = 0; l <= maxLevel; l++) {
-                    if (!levelGroups[l]) continue; occupied[l] = [];
-                    if (l > 0) {
-                        levelGroups[l].sort((aId, bId) => {
-                            const getAvgParentY = (nodeId) => {
-                                const parents = revAdj[nodeId]; if (parents.length === 0) return 0;
-                                const sum = parents.reduce((acc, pid) => { const pPos = finalPositions[pid]; const pTable = state.tables.find(pt => pt.id === pid); return acc + pPos.y + (app.getTableHeight(pTable) / 2); }, 0);
-                                return sum / parents.length;
-                            };
-                            return getAvgParentY(aId) - getAvgParentY(bId);
+                let globalOffsetX = 100;
+                const globalOffsetY = 100;
+                const dbMarginX = 200; // Gap between database containers
+
+                state.databases.forEach(db => {
+                    const dbTables = state.tables.filter(t => t.dbId === db.id);
+                    if (dbTables.length === 0) return;
+
+                    // 1. Build local graph for THIS database only
+                    const adj = {}; const revAdj = {};
+                    dbTables.forEach(t => { adj[t.id] = []; revAdj[t.id] = []; });
+                    
+                    state.relations.forEach(r => {
+                        // Only consider internal relations for the local layout
+                        if (adj[r.fromTableId] && adj[r.toTableId]) {
+                            adj[r.fromTableId].push(r.toTableId);
+                            revAdj[r.toTableId].push(r.fromTableId);
+                        }
+                    });
+
+                    // 2. Determine node levels (topological sort)
+                    const nodeLevels = {};
+                    dbTables.forEach(t => nodeLevels[t.id] = 0);
+                    let changed = true; let iterations = 0;
+                    while (changed && iterations < dbTables.length + 2) {
+                        changed = false;
+                        state.relations.forEach(r => {
+                            if (nodeLevels[r.toTableId] !== undefined && nodeLevels[r.fromTableId] !== undefined) {
+                                if (nodeLevels[r.toTableId] < nodeLevels[r.fromTableId] + 1) {
+                                    nodeLevels[r.toTableId] = nodeLevels[r.fromTableId] + 1;
+                                    changed = true;
+                                }
+                            }
+                        });
+                        iterations++;
+                    }
+
+                    // 3. Group by levels and assign local X, Y
+                    const levelGroups = []; 
+                    Object.entries(nodeLevels).forEach(([id, lvl]) => { 
+                        if (!levelGroups[lvl]) levelGroups[lvl] = []; 
+                        levelGroups[lvl].push(id); 
+                    });
+
+                    const localPositions = {};
+                    const occupied = {};
+                    const spacingX = 420; // Horizontal space between columns within a DB
+                    const spacingY = 80;  // Vertical space between tables
+                    
+                    let maxLocalX = 0;
+
+                    for (let l = 0; l < levelGroups.length; l++) {
+                        if (!levelGroups[l]) continue;
+                        occupied[l] = [];
+                        
+                        // Sort nodes to minimize crossing lines
+                        if (l > 0) {
+                            levelGroups[l].sort((aId, bId) => {
+                                const getAvgParentY = (nodeId) => {
+                                    const parents = revAdj[nodeId]; if (parents.length === 0) return 0;
+                                    const sum = parents.reduce((acc, pid) => { 
+                                        const pPos = localPositions[pid]; 
+                                        const pTable = dbTables.find(pt => pt.id === pid); 
+                                        return acc + pPos.y + (app.getTableHeight(pTable) / 2); 
+                                    }, 0);
+                                    return sum / parents.length;
+                                };
+                                return getAvgParentY(aId) - getAvgParentY(bId);
+                            });
+                        }
+
+                        const currentLocalX = l * spacingX;
+                        maxLocalX = Math.max(maxLocalX, currentLocalX);
+
+                        levelGroups[l].forEach(tId => {
+                            const table = dbTables.find(t => t.id === tId); 
+                            const height = app.getTableHeight(table);
+                            let desiredCenterY = 0; 
+                            const parents = revAdj[tId];
+                            
+                            if (parents.length > 0) {
+                                const parentCenters = parents.map(p => { 
+                                    const pPos = localPositions[p]; 
+                                    const pTable = dbTables.find(pt => pt.id === p); 
+                                    return pPos.y + (app.getTableHeight(pTable) / 2); 
+                                });
+                                desiredCenterY = parentCenters.reduce((a,b)=>a+b,0) / parentCenters.length;
+                            } else { 
+                                desiredCenterY = 0; 
+                            }
+                            
+                            let desiredTop = desiredCenterY - (height / 2); 
+                            let safeTop = desiredTop;
+                            
+                            if (occupied[l].length > 0) { 
+                                const previousItem = occupied[l][occupied[l].length - 1]; 
+                                if (safeTop < previousItem.bottom + spacingY) { 
+                                    safeTop = previousItem.bottom + spacingY; 
+                                } 
+                            }
+                            
+                            if (safeTop < 0) safeTop = 0; 
+                            
+                            localPositions[tId] = { x: currentLocalX, y: safeTop };
+                            occupied[l].push({ top: safeTop, bottom: safeTop + height });
                         });
                     }
-                    levelGroups[l].forEach(tId => {
-                        const table = state.tables.find(t => t.id === tId); const height = app.getTableHeight(table);
-                        let desiredCenterY = 0; const parents = revAdj[tId];
-                        if (parents.length > 0) {
-                            const parentCenters = parents.map(p => { const pPos = finalPositions[p]; const pTable = state.tables.find(pt => pt.id === p); return pPos.y + (app.getTableHeight(pTable) / 2); });
-                            desiredCenterY = parentCenters.reduce((a,b)=>a+b,0) / parentCenters.length;
-                        } else { desiredCenterY = 100; }
-                        let desiredTop = desiredCenterY - (height / 2); let safeTop = desiredTop;
-                        if (occupied[l].length > 0) { const previousItem = occupied[l][occupied[l].length - 1]; if (safeTop < previousItem.bottom + spacingY) { safeTop = previousItem.bottom + spacingY; } }
-                        if (safeTop < 50) safeTop = 50; finalPositions[tId].y = safeTop; occupied[l].push({ top: safeTop, bottom: safeTop + height });
+
+                    // 4. Apply global offsets to actual table positions
+                    dbTables.forEach(t => {
+                        t.x = globalOffsetX + localPositions[t.id].x;
+                        t.y = globalOffsetY + localPositions[t.id].y;
                     });
-                }
-                state.tables.forEach(t => { if (finalPositions[t.id]) { t.x = finalPositions[t.id].x; t.y = finalPositions[t.id].y; } });
-                state.view.x = 50; state.view.y = 50; app.saveState(); app.updateCanvasTransform(); app.renderAll(); 
+
+                    // 5. Update global offset for the next database container
+                    // maxLocalX + Table Width (288) + DB Container Padding (80) + Margin between DBs
+                    globalOffsetX += maxLocalX + 288 + 80 + dbMarginX; 
+                });
+
+                // Reset view to top-left and zoom out slightly to show the layout
+                state.view.x = 50; 
+                state.view.y = 80; 
+                state.view.scale = 0.8; 
+                
+                app.saveState(); 
+                app.updateCanvasTransform(); 
+                app.renderAll(); 
+                app.showToast('Smart Microservice Layout Applied');
             },
 
             dragFieldStart: (e, tableId, index) => { e.stopPropagation(); state.ui.draggingField = { tableId, index }; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', JSON.stringify({ tableId, index })); requestAnimationFrame(() => { const row = e.target.closest('.field-row-container'); if (row) row.classList.add('dragging-row'); }); },
@@ -2181,7 +2268,7 @@
                 app.saveState(); app.cancelConnection(); app.drawConnections(); 
             },
             
-            updateStats: () => { document.getElementById('stats-display').innerHTML = `<b>${state.tables.length}</b> tables &bull; <b>${state.relations.length}</b> relations`; },
+            updateStats: () => { document.getElementById('stats-display').innerHTML = `<b>${state.databases.length}</b> databases &bull; <b>${state.tables.length}</b> tables &bull; <b>${state.relations.length}</b> relations`; },
             
             updateUI: () => {
                 const feedback = document.getElementById('connection-feedback');
@@ -2244,68 +2331,46 @@
                 const layer = document.getElementById('regions-layer');
                 let html = '';
 
-                state.databases.forEach(db => {
-                    const dbTables = state.tables.filter(t => t.dbId === db.id);
-                    if (dbTables.length === 0) return;
-                    
-                    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-                    dbTables.forEach(t => {
-                        minX = Math.min(minX, t.x);
-                        minY = Math.min(minY, t.y);
-                        maxX = Math.max(maxX, t.x + 288); // 72 tailwind classes width (18rem)
-                        maxY = Math.max(maxY, t.y + app.getTableHeight(t));
-                    });
-                    
-                    const padding = 40;
-                    const left = minX - padding;
-                    const top = minY - padding - 30; // Extra room for label
-                    const width = maxX - minX + padding * 2;
-                    const height = maxY - minY + padding * 2 + 30;
-                    
-                    let titleContent = `<span>${db.name}</span>`;
-                    if (state.ui.renamingDbId === db.id) {
-                        titleContent = `<input type="text" value="${db.name}" class="bg-indigo-50/50 border border-indigo-200 rounded px-2 py-0.5 text-xs font-black text-indigo-700 outline-none w-40" onblur="app.finishRenameDB('${db.id}', this.value)" onkeydown="if(event.key === 'Enter') app.finishRenameDB('${db.id}', this.value)" onmousedown="event.stopPropagation()">`;
-                        setTimeout(() => { const input = layer.querySelector('input[type="text"]'); if(input) { input.focus(); input.select(); } }, 10);
-                    }
-                    
-                    // Removed 'transition-all duration-75' to eliminate rubber-banding visual lag
-                    // Added id 'region-{db.id}' to target specific element for performance updates
-                    html += `
-                        <div id="region-${db.id}" class="absolute border-[3px] border-dashed border-indigo-200/70 rounded-3xl bg-indigo-50/40" style="left: ${left}px; top: ${top}px; width: ${width}px; height: ${height}px; z-index: 0;">
-                            <div class="absolute -top-4 left-6 bg-white px-4 py-1.5 rounded-full text-xs font-black text-indigo-700 border-2 border-indigo-100 shadow-md flex items-center gap-2 cursor-grab active:cursor-grabbing pointer-events-auto hover:bg-indigo-50 transition-colors" onmousedown="app.startDragDB(event, '${db.id}')" ondblclick="app.enableRenameDB('${db.id}')" title="Drag to move all tables in container. Double click to rename.">
-                                <i data-lucide="server" class="w-4 h-4 pointer-events-none"></i> ${titleContent}
+                if (state.databases.length > 1) {
+                    state.databases.forEach(db => {
+                        const dbTables = state.tables.filter(t => t.dbId === db.id);
+                        if (dbTables.length === 0) return;
+                        
+                        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                        dbTables.forEach(t => {
+                            minX = Math.min(minX, t.x);
+                            minY = Math.min(minY, t.y);
+                            maxX = Math.max(maxX, t.x + 288); // 72 tailwind classes width (18rem)
+                            maxY = Math.max(maxY, t.y + app.getTableHeight(t));
+                        });
+                        
+                        const padding = 40;
+                        const left = minX - padding;
+                        const top = minY - padding - 30; // Extra room for label
+                        const width = maxX - minX + padding * 2;
+                        const height = maxY - minY + padding * 2 + 30;
+                        
+                        let titleContent = `<span>${db.name}</span>`;
+                        if (state.ui.renamingDbId === db.id) {
+                            titleContent = `<input type="text" value="${db.name}" class="bg-indigo-50/50 border border-indigo-200 rounded px-2 py-0.5 text-xs font-black text-indigo-700 outline-none w-40" onblur="app.finishRenameDB('${db.id}', this.value)" onkeydown="if(event.key === 'Enter') app.finishRenameDB('${db.id}', this.value)" onmousedown="event.stopPropagation()">`;
+                        }
+                        
+                        html += `
+                            <div class="absolute border-[3px] border-dashed border-indigo-200/70 rounded-3xl bg-indigo-50/40 transition-all duration-75" style="left: ${left}px; top: ${top}px; width: ${width}px; height: ${height}px; z-index: 0;">
+                                <div class="absolute -top-4 left-6 bg-white px-4 py-1.5 rounded-full text-xs font-black text-indigo-700 border-2 border-indigo-100 shadow-md flex items-center gap-2 cursor-grab active:cursor-grabbing pointer-events-auto hover:bg-indigo-50 transition-colors" onmousedown="app.startDragDB(event, '${db.id}')" ondblclick="app.enableRenameDB('${db.id}')" title="Drag to move all tables in container. Double click to rename.">
+                                    <i data-lucide="server" class="w-4 h-4 pointer-events-none"></i> ${titleContent}
+                                </div>
                             </div>
-                        </div>
-                    `;
-                });
+                        `;
+                    });
+                }
                 
                 layer.innerHTML = html;
                 lucide.createIcons({ root: layer });
-            },
 
-            updateRegionBounds: () => {
-                // Highly performant region calculation to run 60 times a second without DOM recreation
-                state.databases.forEach(db => {
-                    const dbTables = state.tables.filter(t => t.dbId === db.id);
-                    if (dbTables.length === 0) return;
-                    
-                    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-                    dbTables.forEach(t => {
-                        minX = Math.min(minX, t.x);
-                        minY = Math.min(minY, t.y);
-                        maxX = Math.max(maxX, t.x + 288);
-                        maxY = Math.max(maxY, t.y + app.getTableHeight(t));
-                    });
-                    
-                    const padding = 40;
-                    const regionEl = document.getElementById(`region-${db.id}`);
-                    if (regionEl) {
-                        regionEl.style.left = `${minX - padding}px`;
-                        regionEl.style.top = `${minY - padding - 30}px`;
-                        regionEl.style.width = `${maxX - minX + padding * 2}px`;
-                        regionEl.style.height = `${maxY - minY + padding * 2 + 30}px`;
-                    }
-                });
+                if (state.ui.renamingDbId && state.databases.length > 1) {
+                    setTimeout(() => { const input = layer.querySelector('input[type="text"]'); if(input) { input.focus(); input.select(); } }, 10);
+                }
             },
 
             drawConnections: () => {
