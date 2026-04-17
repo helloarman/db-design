@@ -1614,7 +1614,7 @@
                     }).join('');
                     contentHtml = `<div class="flex flex-col py-1 bg-white min-h-[50px] rounded-b-xl" ondragover="app.dragFieldOver(event)" ondrop="app.dropFieldOnContainer(event, '${table.id}')"> ${fieldsHtml} <div class="px-2 pt-2 pb-2"> <button onclick="app.addField('${table.id}')" class="w-full flex items-center justify-center gap-2 text-xs font-semibold text-slate-400 hover:text-${baseColor}-600 hover:bg-${baseColor}-50 p-2 rounded-lg transition-all border border-dashed border-slate-200 hover:border-${baseColor}-200"> <i data-lucide="plus" class="w-3.5 h-3.5"></i> <span>Add Field</span> </button> </div> </div>`;
                 } else if (table.activeTab === 'sql') {
-                    contentHtml = `<div class="p-0 bg-slate-50/50 rounded-b-xl overflow-hidden h-full flex flex-col"> <div class="px-2 pt-2 pb-1 border-b border-slate-100 bg-white flex items-center justify-between"> <span class="text-[10px] text-slate-500 font-semibold">Database:</span> <div class="relative"> <select onchange="app.changeSqlDialect(this.value)" class="appearance-none bg-slate-100 hover:bg-slate-200 text-[10px] text-slate-700 font-semibold py-1 px-2 pr-6 rounded-md outline-none cursor-pointer transition-colors border border-slate-200"> <option value="mysql" ${state.ui.sqlDialect === 'mysql' ? 'selected' : ''}>MySQL</option> <option value="postgresql" ${state.ui.sqlDialect === 'postgresql' ? 'selected' : ''}>PostgreSQL</option> <option value="sqlite" ${state.ui.sqlDialect === 'sqlite' ? 'selected' : ''}>SQLite</option> <option value="sqlserver" ${state.ui.sqlDialect === 'sqlserver' ? 'selected' : ''}>SQL Server</option> </select> <i data-lucide="chevron-down" class="absolute right-1 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 pointer-events-none"></i> </div> </div> <div class="overflow-auto max-h-64 p-3 custom-scrollbar"> <pre class="code-block text-slate-600 text-xs">${generators.sql(table)}</pre> </div> <div class="p-2 border-t border-slate-100 bg-white"> <button onclick="app.copyToClipboard(generators.sql(state.tables.find(t=>t.id=='${table.id}')))" class="w-full flex items-center justify-center gap-2 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-600 py-2 rounded-lg transition-colors"> <i data-lucide="copy" class="w-3 h-3"></i> Copy SQL </button> </div> </div>`;
+                    contentHtml = `<div class="p-0 bg-slate-50/50 rounded-b-xl overflow-hidden h-full flex flex-col"> <div class="px-2 pt-2 pb-1 border-b border-slate-100 bg-white flex items-center justify-between"> <span class="text-[10px] text-slate-500 font-semibold">Database:</span> <div class="relative"> <select onchange="app.changeSqlDialect(this.value)" class="appearance-none bg-slate-100 hover:bg-slate-200 text-[10px] text-slate-700 font-semibold py-1 px-2 pr-6 rounded-md outline-none cursor-pointer transition-colors border border-slate-200"> <option value="mysql" ${state.ui.sqlDialect === 'mysql' ? 'selected' : ''}>MySQL</option> <option value="postgresql" ${state.ui.sqlDialect === 'postgresql' ? 'selected' : ''}>PostgreSQL</option> <option value="sqlite" ${state.ui.sqlDialect === 'sqlite' ? 'selected' : ''}>SQLite</option> <option value="sqlserver" ${state.ui.sqlDialect === 'sqlserver' ? 'selected' : ''}>SQL Server</option> </select> <i data-lucide="chevron-down" class="absolute right-1 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 pointer-events-none"></i> </div> </div> <div class="overflow-auto max-h-48 p-4 custom-scrollbar"> <pre class="code-block text-slate-600 text-xs">${generators.sql(table)}</pre> </div> <div class="p-2 border-t border-slate-100 bg-white"> <button onclick="app.copyToClipboard(generators.sql(state.tables.find(t=>t.id=='${table.id}')))" class="w-full flex items-center justify-center gap-2 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded transition-colors"> <i data-lucide="copy" class="w-3 h-3"></i> Copy SQL </button> </div> </div>`;
                 } else if (table.activeTab === 'laravel') {
                     const relationsMethods = generators.relations(table);
                     contentHtml = `<div class="p-0 bg-slate-50/50 rounded-b-xl overflow-hidden h-full flex flex-col"> <div class="overflow-auto max-h-64 p-3 custom-scrollbar"> <pre class="code-block text-indigo-600 text-xs">${generators.laravel(table)}</pre> </div> <div class="p-2 border-t border-slate-100 bg-white"> <button onclick="app.copyToClipboard(generators.laravel(state.tables.find(t=>t.id=='${table.id}')))" class="w-full flex items-center justify-center gap-2 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-600 py-2 rounded-lg transition-colors"> <i data-lucide="copy" class="w-3 h-3"></i> Copy Migration </button> </div> </div>`;
@@ -2356,7 +2356,7 @@
                         }
                         
                         html += `
-                            <div class="absolute border-[3px] border-dashed border-indigo-200/70 rounded-3xl bg-indigo-50/40 transition-all duration-75" style="left: ${left}px; top: ${top}px; width: ${width}px; height: ${height}px; z-index: 0;">
+                            <div id="region-${db.id}" class="absolute border-[3px] border-dashed border-indigo-200/70 rounded-3xl bg-indigo-50/40 transition-all duration-75" style="left: ${left}px; top: ${top}px; width: ${width}px; height: ${height}px; z-index: 0;">
                                 <div class="absolute -top-4 left-6 bg-white px-4 py-1.5 rounded-full text-xs font-black text-indigo-700 border-2 border-indigo-100 shadow-md flex items-center gap-2 cursor-grab active:cursor-grabbing pointer-events-auto hover:bg-indigo-50 transition-colors" onmousedown="app.startDragDB(event, '${db.id}')" ondblclick="app.enableRenameDB('${db.id}')" title="Drag to move all tables in container. Double click to rename.">
                                     <i data-lucide="server" class="w-4 h-4 pointer-events-none"></i> ${titleContent}
                                 </div>
@@ -2371,6 +2371,33 @@
                 if (state.ui.renamingDbId && state.databases.length > 1) {
                     setTimeout(() => { const input = layer.querySelector('input[type="text"]'); if(input) { input.focus(); input.select(); } }, 10);
                 }
+            },
+
+            updateRegionBounds: () => {
+                if (state.databases.length <= 1) return;
+                
+                // Highly performant region calculation to run 60 times a second without DOM recreation
+                state.databases.forEach(db => {
+                    const dbTables = state.tables.filter(t => t.dbId === db.id);
+                    if (dbTables.length === 0) return;
+                    
+                    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                    dbTables.forEach(t => {
+                        minX = Math.min(minX, t.x);
+                        minY = Math.min(minY, t.y);
+                        maxX = Math.max(maxX, t.x + 288);
+                        maxY = Math.max(maxY, t.y + app.getTableHeight(t));
+                    });
+                    
+                    const padding = 40;
+                    const regionEl = document.getElementById(`region-${db.id}`);
+                    if (regionEl) {
+                        regionEl.style.left = `${minX - padding}px`;
+                        regionEl.style.top = `${minY - padding - 30}px`;
+                        regionEl.style.width = `${maxX - minX + padding * 2}px`;
+                        regionEl.style.height = `${maxY - minY + padding * 2 + 30}px`;
+                    }
+                });
             },
 
             drawConnections: () => {
