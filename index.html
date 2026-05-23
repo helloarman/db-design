@@ -144,62 +144,77 @@
 
     <!-- UI Layer: Toolbar (Left) -->
     <div id="left-toolbar" class="absolute top-16 left-4 z-50 flex flex-col gap-2 transition-opacity duration-300">
-        <div class="bg-white shadow-lg rounded-xl p-2 border border-slate-200 flex flex-col gap-2">
+        <div class="bg-white shadow-md rounded-xl p-1.5 border border-slate-200 flex flex-col gap-1 w-12 items-center">
             
-            <button onclick="app.openDBManager()" class="p-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg flex items-center justify-center shadow-md transition-colors tooltip-container group relative" title="Manage Databases">
-                <i data-lucide="database" class="w-6 h-6"></i>
-                <span class="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">Manage Databases</span>
-            </button>
-            
-            <div class="h-px bg-slate-200 my-1"></div>
-            
-            <button onclick="app.openModal()" class="p-3 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors tooltip-container group relative" title="Add Table">
-                <i data-lucide="plus" class="w-6 h-6"></i>
-                <span class="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">Add Table</span>
+            <button onclick="app.openDBManager()" class="w-9 h-9 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg flex items-center justify-center shadow-sm transition-colors tooltip-container group relative" title="Manage Databases">
+                <i data-lucide="database" class="w-4 h-4"></i>
+                <span class="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 font-medium">Manage Databases</span>
             </button>
             
-            <button onclick="app.autoLayout()" class="p-3 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors group relative" title="Auto Layout">
-                <i data-lucide="layout-template" class="w-6 h-6 text-indigo-500"></i>
-                <span class="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">Auto Layout</span>
+            <div class="w-6 h-px bg-slate-200 my-0.5"></div>
+            
+            <button onclick="app.openModal()" class="w-9 h-9 hover:bg-slate-100 rounded-lg text-slate-600 flex items-center justify-center transition-colors tooltip-container group relative" title="Add Table">
+                <i data-lucide="plus" class="w-5 h-5"></i>
+                <span class="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 font-medium">Add Table</span>
+            </button>
+            
+            <button onclick="app.autoLayout()" class="w-9 h-9 hover:bg-slate-100 rounded-lg text-slate-600 flex items-center justify-center transition-colors group relative" title="Auto Layout">
+                <i data-lucide="layout-template" class="w-4 h-4 text-indigo-500"></i>
+                <span class="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 font-medium">Auto Layout</span>
             </button>
 
-            <button onclick="app.resetView()" class="p-3 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors group relative" title="Reset View">
-                <i data-lucide="maximize-2" class="w-6 h-6 text-slate-500"></i>
-                <span class="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">Reset View</span>
+            <div class="w-6 h-px bg-slate-200 my-0.5"></div>
+
+            <button onclick="app.triggerImport()" class="w-9 h-9 hover:bg-slate-100 rounded-lg text-slate-600 flex items-center justify-center transition-colors group relative" title="Import JSON">
+                <i data-lucide="file-up" class="w-4 h-4 text-blue-500"></i>
+                <span class="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 font-medium">Import JSON</span>
             </button>
 
-            <div class="h-px bg-slate-200 my-1"></div>
-
-            <button onclick="app.exportSchema()" class="p-3 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors group relative" title="Export JSON">
-                <i data-lucide="file-json" class="w-6 h-6 text-green-500"></i>
-                <span class="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">Export JSON</span>
+            <button onclick="app.openImportSqlModal()" class="w-9 h-9 hover:bg-slate-100 rounded-lg text-slate-600 flex items-center justify-center transition-colors group relative" title="Import SQL">
+                <i data-lucide="database-zap" class="w-4 h-4 text-amber-500"></i>
+                <span class="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 font-medium">Import SQL</span>
             </button>
 
-            <button onclick="app.triggerImport()" class="p-3 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors group relative" title="Import JSON">
-                <i data-lucide="file-up" class="w-6 h-6 text-blue-500"></i>
-                <span class="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">Import JSON</span>
+            <div class="w-6 h-px bg-slate-200 my-0.5"></div>
+
+            <button onclick="app.exportSchema()" class="w-9 h-9 hover:bg-slate-100 rounded-lg text-slate-600 flex items-center justify-center transition-colors group relative" title="Export JSON">
+                <i data-lucide="file-json" class="w-4 h-4 text-green-500"></i>
+                <span class="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 font-medium">Export JSON</span>
             </button>
 
-            <button onclick="app.exportPDF()" class="p-3 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors group relative" title="Export PDF">
-                <i data-lucide="file-down" class="w-6 h-6 text-red-500"></i>
-                <span class="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">Export PDF</span>
+            <button onclick="app.exportFullSql()" class="w-9 h-9 hover:bg-slate-100 rounded-lg text-slate-600 flex items-center justify-center transition-colors group relative" title="Export SQL">
+                <i data-lucide="database-backup" class="w-4 h-4 text-indigo-500"></i>
+                <span class="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 font-medium">Export Full SQL</span>
             </button>
 
-            <div class="h-px bg-slate-200 my-1"></div>
-
-            <button onclick="app.requestClear()" class="p-3 hover:bg-rose-50 rounded-lg text-rose-500 transition-colors group relative" title="Clear Board">
-                <i data-lucide="trash-2" class="w-6 h-6"></i>
-                <span class="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">Clear All</span>
+            <button onclick="app.exportPDF()" class="w-9 h-9 hover:bg-slate-100 rounded-lg text-slate-600 flex items-center justify-center transition-colors group relative" title="Export PDF">
+                <i data-lucide="file-down" class="w-4 h-4 text-red-500"></i>
+                <span class="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 font-medium">Export PDF</span>
             </button>
 
-            <div class="h-px bg-slate-200 my-1"></div>
+            <div class="w-6 h-px bg-slate-200 my-0.5"></div>
 
-            <button onclick="app.zoomIn()" class="p-3 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors group relative">
-                <i data-lucide="zoom-in" class="w-6 h-6"></i>
+            <button onclick="app.requestClear()" class="w-9 h-9 hover:bg-rose-50 hover:text-rose-500 rounded-lg text-slate-400 flex items-center justify-center transition-colors group relative" title="Clear Board">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                <span class="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 font-medium">Clear All</span>
             </button>
-            <button onclick="app.zoomOut()" class="p-3 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors group relative">
-                <i data-lucide="zoom-out" class="w-6 h-6"></i>
-            </button>
+
+            <div class="w-6 h-px bg-slate-200 my-0.5"></div>
+
+            <div class="flex flex-col gap-0.5 w-full bg-slate-50 rounded-lg p-0.5 border border-slate-100 mt-0.5">
+                <button onclick="app.zoomIn()" class="w-full h-7 hover:bg-white hover:shadow-sm rounded-md text-slate-500 flex items-center justify-center transition-all group relative" title="Zoom In">
+                    <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                    <span class="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 font-medium">Zoom In</span>
+                </button>
+                <button onclick="app.resetView()" class="w-full h-7 hover:bg-white hover:shadow-sm rounded-md text-slate-500 flex items-center justify-center transition-all group relative" title="Reset View">
+                    <span class="text-[9px] font-bold">1:1</span>
+                    <span class="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 font-medium">Reset View</span>
+                </button>
+                <button onclick="app.zoomOut()" class="w-full h-7 hover:bg-white hover:shadow-sm rounded-md text-slate-500 flex items-center justify-center transition-all group relative" title="Zoom Out">
+                    <i data-lucide="minus" class="w-3.5 h-3.5"></i>
+                    <span class="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 font-medium">Zoom Out</span>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -330,6 +345,43 @@
 
     <!-- Modals -->
     
+    <!-- Import SQL Modal -->
+    <div id="import-sql-modal-backdrop" class="hidden fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center transition-opacity opacity-0">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl overflow-hidden transform scale-95 transition-transform p-6 flex flex-col h-[80vh]" id="import-sql-modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-gray-800">Import SQL</h3>
+                <button onclick="app.closeImportSqlModal()" class="p-1 hover:bg-gray-100 rounded-full text-gray-500">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <div class="flex flex-col gap-4 flex-1 overflow-hidden">
+                <p class="text-sm text-slate-500">Paste your <code>CREATE TABLE</code> SQL statements below to automatically generate tables. (MySQL, PostgreSQL supported).</p>
+                
+                <div class="flex-1 relative">
+                    <textarea id="import-sql-textarea" class="w-full h-full p-4 bg-slate-900 text-slate-200 font-mono text-sm rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 resize-none custom-scrollbar leading-relaxed" spellcheck="false" placeholder="CREATE TABLE users (\n  id BIGINT PRIMARY KEY,\n  name VARCHAR(255) NOT NULL\n);"></textarea>
+                </div>
+
+                <div class="flex justify-between items-center mt-2">
+                    <div class="flex items-center gap-2">
+                        <input type="file" id="import-sql-file" accept=".sql" class="hidden" onchange="app.handleSqlFileSelect(event)">
+                        <button onclick="document.getElementById('import-sql-file').click()" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1 transition-colors">
+                            <i data-lucide="upload" class="w-4 h-4"></i> Upload .sql file
+                        </button>
+                    </div>
+                    <div class="flex gap-3">
+                        <button onclick="app.closeImportSqlModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-colors">
+                            Cancel
+                        </button>
+                        <button onclick="app.processImportSql()" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors shadow-sm flex items-center gap-2">
+                            <i data-lucide="wand-2" class="w-4 h-4"></i> Generate Tables
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Database Manager Modal -->
     <div id="db-manager-modal-backdrop" class="hidden fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center transition-opacity opacity-0">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden transform scale-95 transition-transform p-6" id="db-manager-modal-content">
@@ -958,6 +1010,269 @@
                 const fileName = `${state.projectName.toLowerCase().replace(/\s+/g, '-')}-${new Date().toISOString().slice(0,10)}.pdf`;
                 doc.save(fileName);
                 app.showToast('PDF exported successfully!');
+            },
+
+            exportFullSql: () => {
+                if (state.tables.length === 0) {
+                    app.showToast('No tables to export.');
+                    return;
+                }
+
+                let fullSql = `-- Database Schema: ${state.projectName}\n`;
+                fullSql += `-- Generated: ${new Date().toLocaleString()}\n`;
+                fullSql += `-- Dialect: ${state.ui.sqlDialect.toUpperCase()}\n\n`;
+
+                // Calculate dependencies for proper table creation order
+                const inDegree = {};
+                const adj = {};
+                state.tables.forEach(t => { inDegree[t.id] = 0; adj[t.id] = []; });
+                
+                state.relations.forEach(r => {
+                    if (adj[r.fromTableId]) {
+                        adj[r.fromTableId].push(r.toTableId);
+                        inDegree[r.toTableId] = (inDegree[r.toTableId] || 0) + 1;
+                    }
+                });
+
+                // Simple topological sort to try to get parents first
+                const sortedTableIds = [];
+                const queue = Object.keys(inDegree).filter(id => inDegree[id] === 0);
+                
+                while(queue.length > 0) {
+                    const curr = queue.shift();
+                    sortedTableIds.push(curr);
+                    (adj[curr] || []).forEach(childId => {
+                        inDegree[childId]--;
+                        if (inDegree[childId] === 0) queue.push(childId);
+                    });
+                }
+
+                // Add remaining tables (if circular dependency exists)
+                state.tables.forEach(t => {
+                    if (!sortedTableIds.includes(t.id)) sortedTableIds.push(t.id);
+                });
+
+                // Generate SQL in order
+                sortedTableIds.forEach(tId => {
+                    const table = state.tables.find(t => t.id === tId);
+                    if (table) {
+                        fullSql += `-- Table: ${table.name}\n`;
+                        fullSql += generators.sql(table, state.ui.sqlDialect) + '\n\n';
+                    }
+                });
+
+                const blob = new Blob([fullSql], { type: "text/plain" });
+                const url = URL.createObjectURL(blob);
+                const fileName = `${state.projectName.toLowerCase().replace(/\s+/g, '-')}-schema.sql`;
+                const a = document.createElement('a'); a.href = url; a.download = fileName;
+                document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+                app.showToast('Full SQL exported!');
+            },
+
+            openImportSqlModal: () => {
+                const backdrop = document.getElementById('import-sql-modal-backdrop');
+                const content = document.getElementById('import-sql-modal-content');
+                document.getElementById('import-sql-textarea').value = '';
+                backdrop.classList.remove('hidden');
+                setTimeout(() => {
+                    backdrop.classList.remove('opacity-0');
+                    content.classList.remove('scale-95');
+                    content.classList.add('scale-100');
+                }, 10);
+            },
+
+            closeImportSqlModal: () => {
+                const backdrop = document.getElementById('import-sql-modal-backdrop');
+                const content = document.getElementById('import-sql-modal-content');
+                backdrop.classList.add('opacity-0');
+                content.classList.remove('scale-100');
+                content.classList.add('scale-95');
+                setTimeout(() => {
+                    backdrop.classList.add('hidden');
+                }, 200);
+            },
+
+            handleSqlFileSelect: (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    document.getElementById('import-sql-textarea').value = e.target.result;
+                    app.showToast('SQL file loaded. Ready to generate.');
+                    event.target.value = ''; // Reset input
+                };
+                reader.readAsText(file);
+            },
+
+            processImportSql: () => {
+                const sqlText = document.getElementById('import-sql-textarea').value;
+                if (!sqlText.trim()) {
+                    app.showToast('Please enter SQL statements.');
+                    return;
+                }
+
+                // Simple regex based CREATE TABLE parser
+                // This is a basic implementation to handle standard DDL.
+                
+                const tableRegex = /CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(?:[`"'\[])?([a-zA-Z0-9_]+)(?:[`"'\]])?\s*\(([\s\S]*?)\)(?:\s*ENGINE.*?)?(?:\s*WITH.*?)?;/gi;
+                let match;
+                let addedTables = 0;
+                let tempNewTables = [];
+
+                while ((match = tableRegex.exec(sqlText)) !== null) {
+                    const tableNameStr = match[1];
+                    const columnsStr = match[2];
+                    const tableName = app.formatName(tableNameStr);
+
+                    // Check if table exists
+                    if (state.tables.find(t => t.name === tableName)) {
+                        continue; // Skip existing
+                    }
+
+                    const newTable = {
+                        id: app.generateId(),
+                        dbId: state.databases[0].id, // Default DB
+                        name: tableName,
+                        x: -state.view.x + 200 + (addedTables * 30),
+                        y: -state.view.y + 200 + (addedTables * 30),
+                        color: CONSTANTS.COLORS[state.tables.length % CONSTANTS.COLORS.length],
+                        activeTab: 'fields',
+                        fields: []
+                    };
+
+                    // Parse columns and constraints
+                    // Split by comma, but ignore commas inside parentheses (like DECIMAL(10,2) or ENUM('a','b'))
+                    const lines = columnsStr.split(/,(?![^\(]*\))/);
+
+                    lines.forEach(line => {
+                        const trimmedLine = line.trim();
+                        if (!trimmedLine) return;
+
+                        // Check for constraints (PRIMARY KEY, FOREIGN KEY, UNIQUE, etc.) at table level
+                        if (/^(PRIMARY\s+KEY|FOREIGN\s+KEY|UNIQUE|CONSTRAINT|KEY|INDEX)/i.test(trimmedLine)) {
+                            // Primary Key definition at table level: PRIMARY KEY (id)
+                            const pkMatch = trimmedLine.match(/PRIMARY\s+KEY\s*\(\s*[`"'\[]?([a-zA-Z0-9_]+)[`"'\]]?\s*\)/i);
+                            if (pkMatch) {
+                                const pkField = newTable.fields.find(f => f.name === pkMatch[1]);
+                                if (pkField) pkField.isPk = true;
+                            }
+                            return; // Skip constraint parsing for now (handle simple PKs only)
+                        }
+
+                        // It's likely a column definition
+                        // E.g. `id` BIGINT NOT NULL AUTO_INCREMENT
+                        const colRegex = /^(?:[`"'\[])?([a-zA-Z0-9_]+)(?:[`"'\]])?\s+([a-zA-Z0-9_]+)(?:\s*\(([\s\S]*?)\))?\s*(.*)$/i;
+                        const colMatch = trimmedLine.match(colRegex);
+
+                        if (colMatch) {
+                            const name = colMatch[1];
+                            let rawType = colMatch[2].toUpperCase();
+                            const typeArgs = colMatch[3];
+                            const extra = colMatch[4].toUpperCase();
+
+                            let mappedType = 'VARCHAR'; // Default fallback
+                            let enumVals = '';
+
+                            // Map common SQL types to internal types
+                            if (rawType.includes('INT')) {
+                                if (rawType.includes('BIG')) mappedType = 'BIGINT';
+                                else if (rawType.includes('TINY')) mappedType = 'TINYINT';
+                                else if (rawType.includes('SMALL')) mappedType = 'SMALLINT';
+                                else mappedType = 'INT';
+                            } else if (rawType.includes('CHAR') || rawType.includes('TEXT')) {
+                                if (rawType.includes('LONG')) mappedType = 'LONGTEXT';
+                                else if (rawType === 'TEXT') mappedType = 'TEXT';
+                                else mappedType = 'VARCHAR';
+                            } else if (rawType.includes('DEC') || rawType.includes('NUMERIC')) {
+                                mappedType = 'DECIMAL';
+                            } else if (rawType.includes('FLOAT') || rawType.includes('REAL')) {
+                                mappedType = 'FLOAT';
+                            } else if (rawType.includes('DOUBLE')) {
+                                mappedType = 'DOUBLE';
+                            } else if (rawType.includes('BOOL')) {
+                                mappedType = 'BOOLEAN';
+                            } else if (rawType.includes('DATE') || rawType.includes('TIME')) {
+                                if (rawType === 'DATETIME') mappedType = 'DATETIME';
+                                else if (rawType === 'TIMESTAMP') mappedType = 'TIMESTAMP';
+                                else if (rawType === 'TIME') mappedType = 'TIME';
+                                else mappedType = 'DATE';
+                            } else if (rawType.includes('UUID')) {
+                                mappedType = 'UUID';
+                            } else if (rawType.includes('JSON')) {
+                                mappedType = 'JSON';
+                            } else if (rawType === 'ENUM') {
+                                mappedType = 'ENUM';
+                                if (typeArgs) {
+                                     // format: 'val1','val2' -> ensure valid string
+                                    enumVals = typeArgs;
+                                }
+                            }
+
+                            const isPk = extra.includes('PRIMARY KEY');
+                            const isNullable = !extra.includes('NOT NULL');
+                            
+                            // Check if name suggests foreign key conventionally (ends with _id)
+                            const isFk = name.endsWith('_id');
+                            if (isFk && rawType.includes('INT')) {
+                                mappedType = 'foreignId';
+                            }
+
+                            newTable.fields.push({
+                                id: app.generateId(),
+                                name: name,
+                                type: mappedType,
+                                isPk: isPk,
+                                isNullable: isNullable,
+                                isFk: isFk,
+                                enumValues: enumVals
+                            });
+                        }
+                    });
+
+                    // Ensure at least one field
+                    if (newTable.fields.length === 0) {
+                        newTable.fields.push({ id: app.generateId(), name: 'id', type: 'BIGINT', isPk: true, isNullable: false });
+                    }
+
+                    tempNewTables.push(newTable);
+                    addedTables++;
+                }
+
+                if (tempNewTables.length > 0) {
+                    state.tables.push(...tempNewTables);
+                    
+                    // Second pass: Attempt to auto-link relations based on `_id` convention
+                    tempNewTables.forEach(t => {
+                        t.fields.filter(f => f.name.endsWith('_id')).forEach(f => {
+                            const targetName = f.name.replace(/_id$/, 's'); // Simple pluralization fallback
+                            const exactTargetName = f.name.replace(/_id$/, '');
+                            
+                            const targetTable = state.tables.find(target => target.name === targetName || target.name === exactTargetName);
+                            if (targetTable && targetTable.id !== t.id) {
+                                // Check if relation already exists
+                                const exists = state.relations.find(r => r.fromTableId === targetTable.id && r.toTableId === t.id && r.fkFieldId === f.id);
+                                if (!exists) {
+                                    state.relations.push({
+                                        id: app.generateId(),
+                                        fromTableId: targetTable.id,
+                                        toTableId: t.id,
+                                        type: '1:n',
+                                        fkFieldId: f.id
+                                    });
+                                    f.isFk = true;
+                                }
+                            }
+                        });
+                    });
+
+                    app.saveState();
+                    app.renderAll();
+                    app.autoLayout(); // Automatically arrange newly imported tables
+                    app.closeImportSqlModal();
+                    app.showToast(`Imported ${addedTables} table(s) successfully!`);
+                } else {
+                    app.showToast('No valid CREATE TABLE statements found.');
+                }
             },
             
             triggerImport: () => { document.getElementById('import-file').click(); },
