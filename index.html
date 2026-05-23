@@ -977,8 +977,12 @@
                             state.view = data.view || { x: 0, y: 0, scale: 1 };
                             document.getElementById('project-name-input').value = state.projectName;
                             app.saveState(); app.renderAll(); app.updateCanvasTransform(); app.showToast('Schema imported!');
-                        } else { alert('Invalid file'); }
-                    } catch (err) { alert('Error parsing JSON'); }
+                        } else { 
+                            app.showToast('Error: Invalid file format'); 
+                        }
+                    } catch (err) { 
+                        app.showToast('Error parsing JSON file'); 
+                    }
                     event.target.value = '';
                 };
                 reader.readAsText(file);
@@ -1044,11 +1048,11 @@
             deleteDB: (id) => {
                 const tableCount = state.tables.filter(t => t.dbId === id).length;
                 if (tableCount > 0) {
-                    alert(`Cannot delete: ${tableCount} table(s) exist in this database. Please delete or reassign them first.`);
+                    app.showToast(`Cannot delete: ${tableCount} table(s) exist in this database. Please delete or reassign them first.`);
                     return;
                 }
                 if (state.databases.length === 1) {
-                    alert('You must have at least one database container.');
+                    app.showToast('You must have at least one database container.');
                     return;
                 }
                 state.databases = state.databases.filter(db => db.id !== id);
@@ -1664,7 +1668,7 @@
                 const input = document.getElementById('new-table-name'); const rawName = input.value; if (!rawName.trim()) return;
                 const dbId = document.getElementById('new-table-db-select').value;
                 const name = app.formatName(rawName);
-                if (state.tables.find(t => t.name === name)) { alert('Table name exists'); return; }
+                if (state.tables.find(t => t.name === name)) { app.showToast('Error: Table name exists'); return; }
                 const newTable = { 
                     id: app.generateId(), dbId: dbId, name, x: -state.view.x + 200, y: -state.view.y + 200, color: CONSTANTS.COLORS[state.tables.length % CONSTANTS.COLORS.length], activeTab: 'fields', 
                     fields: [ { id: app.generateId(), name: 'id', type: 'BIGINT', isPk: true, isNullable: false } ] 
@@ -1720,7 +1724,7 @@
                 
                 const dbSelect = document.getElementById('move-table-db-select');
                 dbSelect.innerHTML = state.databases.map(db => 
-                    `<option value="${db.id}" ${db.id === table.dbId ? 'selected' : ''}>${db.name}</option>`
+                    `<option value="${db.id}" ${db.id === table.dbId ? 'selected' : ''}">${db.name}</option>`
                 ).join('');
                 
                 const backdrop = document.getElementById('move-table-modal-backdrop');
@@ -2093,9 +2097,10 @@
             },
             
             deleteRelation: (relId) => {
-                if(!confirm('Remove relation?')) return; const rel = state.relations.find(r => r.id === relId);
+                const rel = state.relations.find(r => r.id === relId);
                 if (rel) { const table = state.tables.find(t => t.id === rel.toTableId); if (table) { const field = table.fields.find(f => f.id === rel.fkFieldId); if (field) { field.isFk = false; app.renderTable(table); } } }
                 state.relations = state.relations.filter(r => r.id !== relId); app.saveState(); app.drawConnections(); app.updateStats();
+                app.showToast('Relation removed');
             },
 
             getTableHeight: (t) => {
@@ -2167,13 +2172,18 @@
                         if (l > 0) {
                             levelGroups[l].sort((aId, bId) => {
                                 const getAvgParentY = (nodeId) => {
-                                    const parents = revAdj[nodeId]; if (parents.length === 0) return 0;
+                                    const parents = revAdj[nodeId]; 
+                                    if (!parents || parents.length === 0) return 0;
+                                    let validParents = 0;
                                     const sum = parents.reduce((acc, pid) => { 
                                         const pPos = localPositions[pid]; 
+                                        if(!pPos) return acc; // SAFEGUARD: Parent might not be positioned yet due to circular dependency.
                                         const pTable = dbTables.find(pt => pt.id === pid); 
+                                        if(!pTable) return acc;
+                                        validParents++;
                                         return acc + pPos.y + (app.getTableHeight(pTable) / 2); 
                                     }, 0);
-                                    return sum / parents.length;
+                                    return validParents > 0 ? sum / validParents : 0;
                                 };
                                 return getAvgParentY(aId) - getAvgParentY(bId);
                             });
@@ -2188,15 +2198,18 @@
                             let desiredCenterY = 0; 
                             const parents = revAdj[tId];
                             
-                            if (parents.length > 0) {
-                                const parentCenters = parents.map(p => { 
+                            if (parents && parents.length > 0) {
+                                const validParentCenters = parents.map(p => { 
                                     const pPos = localPositions[p]; 
+                                    if(!pPos) return null; // SAFEGUARD
                                     const pTable = dbTables.find(pt => pt.id === p); 
+                                    if(!pTable) return null;
                                     return pPos.y + (app.getTableHeight(pTable) / 2); 
-                                });
-                                desiredCenterY = parentCenters.reduce((a,b)=>a+b,0) / parentCenters.length;
-                            } else { 
-                                desiredCenterY = 0; 
+                                }).filter(y => y !== null);
+                                
+                                if (validParentCenters.length > 0) {
+                                    desiredCenterY = validParentCenters.reduce((a,b)=>a+b,0) / validParentCenters.length;
+                                }
                             }
                             
                             let desiredTop = desiredCenterY - (height / 2); 
@@ -2218,8 +2231,10 @@
 
                     // 4. Apply global offsets to actual table positions
                     dbTables.forEach(t => {
-                        t.x = globalOffsetX + localPositions[t.id].x;
-                        t.y = globalOffsetY + localPositions[t.id].y;
+                        if(localPositions[t.id]) {
+                            t.x = globalOffsetX + localPositions[t.id].x;
+                            t.y = globalOffsetY + localPositions[t.id].y;
+                        }
                     });
 
                     // 5. Update global offset for the next database container
@@ -2497,7 +2512,7 @@
                         table.y = (e.clientY - state.ui.draggingTable.offsetY - state.view.y) / state.view.scale;
                         app.updateTablePosition(tId, table.x, table.y);
                         app.drawConnections();
-                        app.updateRegionBounds(); // Changed from renderRegions to dramatically improve performance
+                        app.updateRegionBounds(); 
                     }
                     
                     if (state.ui.draggingDB) {
@@ -2513,7 +2528,7 @@
                             }
                         });
                         app.drawConnections();
-                        app.updateRegionBounds(); // Changed from renderRegions to dramatically improve performance
+                        app.updateRegionBounds(); 
                     }
                     
                     if (state.ui.connectingFrom) {
