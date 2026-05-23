@@ -1734,20 +1734,52 @@
                 container.innerHTML = '';
 
                 const tableLevelMap = {};
-                state.tables.forEach(t => tableLevelMap[t.id] = 0);
+                const inDegree = {};
+                const adj = {};
+                state.tables.forEach(t => { 
+                    tableLevelMap[t.id] = -1; 
+                    inDegree[t.id] = 0; 
+                    adj[t.id] = []; 
+                });
 
-                let changed = true;
-                let iterations = 0;
-                while(changed && iterations < state.tables.length + 2) {
-                    changed = false;
-                    state.relations.forEach(r => {
-                        if (tableLevelMap[r.toTableId] < tableLevelMap[r.fromTableId] + 1) {
-                            tableLevelMap[r.toTableId] = tableLevelMap[r.fromTableId] + 1;
-                            changed = true;
-                        }
-                    });
-                    iterations++;
-                }
+                state.relations.forEach(r => {
+                    if (inDegree[r.toTableId] !== undefined) {
+                        inDegree[r.toTableId]++;
+                        adj[r.fromTableId].push(r.toTableId);
+                    }
+                });
+
+                const queue = [];
+                state.tables.forEach(t => {
+                    if (inDegree[t.id] === 0) {
+                        tableLevelMap[t.id] = 0;
+                        queue.push(t.id);
+                    }
+                });
+
+                const processQueue = () => {
+                    while (queue.length > 0) {
+                        const curr = queue.shift();
+                        const currLevel = tableLevelMap[curr];
+                        adj[curr].forEach(childId => {
+                            if (tableLevelMap[childId] === -1) {
+                                tableLevelMap[childId] = currLevel + 1;
+                                queue.push(childId);
+                            }
+                        });
+                    }
+                };
+
+                processQueue();
+
+                // Handle any disconnected components or pure cycles
+                state.tables.forEach(t => {
+                    if (tableLevelMap[t.id] === -1) {
+                        tableLevelMap[t.id] = 0;
+                        queue.push(t.id);
+                        processQueue();
+                    }
+                });
 
                 const maxLevel = Object.values(tableLevelMap).length ? Math.max(...Object.values(tableLevelMap)) : 0;
                 
@@ -2430,7 +2462,7 @@
             autoLayout: () => {
                 let globalOffsetX = 100;
                 const globalOffsetY = 100;
-                const dbMarginX = 200; // Gap between database containers
+                const dbMarginX = 150; // Gap between database containers
 
                 state.databases.forEach(db => {
                     const dbTables = state.tables.filter(t => t.dbId === db.id);
@@ -2441,29 +2473,54 @@
                     dbTables.forEach(t => { adj[t.id] = []; revAdj[t.id] = []; });
                     
                     state.relations.forEach(r => {
-                        // Only consider internal relations for the local layout
                         if (adj[r.fromTableId] && adj[r.toTableId]) {
                             adj[r.fromTableId].push(r.toTableId);
                             revAdj[r.toTableId].push(r.fromTableId);
                         }
                     });
 
-                    // 2. Determine node levels (topological sort)
+                    // 2. Determine node levels (BFS to prevent cycle inflation)
                     const nodeLevels = {};
-                    dbTables.forEach(t => nodeLevels[t.id] = 0);
-                    let changed = true; let iterations = 0;
-                    while (changed && iterations < dbTables.length + 2) {
-                        changed = false;
-                        state.relations.forEach(r => {
-                            if (nodeLevels[r.toTableId] !== undefined && nodeLevels[r.fromTableId] !== undefined) {
-                                if (nodeLevels[r.toTableId] < nodeLevels[r.fromTableId] + 1) {
-                                    nodeLevels[r.toTableId] = nodeLevels[r.fromTableId] + 1;
-                                    changed = true;
+                    const inDegree = {};
+                    dbTables.forEach(t => { nodeLevels[t.id] = -1; inDegree[t.id] = 0; });
+                    
+                    state.relations.forEach(r => {
+                        if (inDegree[r.toTableId] !== undefined && inDegree[r.fromTableId] !== undefined) {
+                            inDegree[r.toTableId]++;
+                        }
+                    });
+
+                    const queue = [];
+                    dbTables.forEach(t => {
+                        if (inDegree[t.id] === 0) {
+                            nodeLevels[t.id] = 0;
+                            queue.push(t.id);
+                        }
+                    });
+
+                    const processQueue = () => {
+                        while (queue.length > 0) {
+                            const curr = queue.shift();
+                            const currLevel = nodeLevels[curr];
+                            (adj[curr] || []).forEach(childId => {
+                                if (nodeLevels[childId] === -1) {
+                                    nodeLevels[childId] = currLevel + 1;
+                                    queue.push(childId);
                                 }
-                            }
-                        });
-                        iterations++;
-                    }
+                            });
+                        }
+                    };
+                    
+                    processQueue();
+                    
+                    // Handle cycles / disconnected components
+                    dbTables.forEach(t => {
+                        if (nodeLevels[t.id] === -1) {
+                            nodeLevels[t.id] = 0;
+                            queue.push(t.id);
+                            processQueue();
+                        }
+                    });
 
                     // 3. Group by levels and assign local X, Y
                     const levelGroups = []; 
@@ -2474,8 +2531,8 @@
 
                     const localPositions = {};
                     const occupied = {};
-                    const spacingX = 420; // Horizontal space between columns within a DB
-                    const spacingY = 80;  // Vertical space between tables
+                    const spacingX = 380; // Compact horizontal space
+                    const spacingY = 60;  // Compact vertical space
                     
                     let maxLocalX = 0;
 
@@ -2483,7 +2540,6 @@
                         if (!levelGroups[l]) continue;
                         occupied[l] = [];
                         
-                        // Sort nodes to minimize crossing lines
                         if (l > 0) {
                             levelGroups[l].sort((aId, bId) => {
                                 const getAvgParentY = (nodeId) => {
@@ -2492,7 +2548,7 @@
                                     let validParents = 0;
                                     const sum = parents.reduce((acc, pid) => { 
                                         const pPos = localPositions[pid]; 
-                                        if(!pPos) return acc; // SAFEGUARD: Parent might not be positioned yet due to circular dependency.
+                                        if(!pPos) return acc;
                                         const pTable = dbTables.find(pt => pt.id === pid); 
                                         if(!pTable) return acc;
                                         validParents++;
@@ -2516,7 +2572,7 @@
                             if (parents && parents.length > 0) {
                                 const validParentCenters = parents.map(p => { 
                                     const pPos = localPositions[p]; 
-                                    if(!pPos) return null; // SAFEGUARD
+                                    if(!pPos) return null; 
                                     const pTable = dbTables.find(pt => pt.id === p); 
                                     if(!pTable) return null;
                                     return pPos.y + (app.getTableHeight(pTable) / 2); 
@@ -2544,7 +2600,6 @@
                         });
                     }
 
-                    // 4. Apply global offsets to actual table positions
                     dbTables.forEach(t => {
                         if(localPositions[t.id]) {
                             t.x = globalOffsetX + localPositions[t.id].x;
@@ -2552,8 +2607,6 @@
                         }
                     });
 
-                    // 5. Update global offset for the next database container
-                    // maxLocalX + Table Width (288) + DB Container Padding (80) + Margin between DBs
                     globalOffsetX += maxLocalX + 288 + 80 + dbMarginX; 
                 });
 
