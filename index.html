@@ -8,6 +8,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -1004,6 +1005,126 @@
                 app.showToast('Schema exported!');
             },
             
+            downloadTaskPDF: () => {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                doc.setFontSize(22);
+                doc.setTextColor(33, 37, 41);
+                doc.text(state.projectName + " - Task Plan", 14, 20);
+                
+                doc.setFontSize(10);
+                doc.setTextColor(100, 116, 139);
+                doc.setFont(undefined, 'normal');
+                doc.text("Generated on " + new Date().toLocaleDateString(), 14, 28);
+                
+                let yPos = 40;
+                
+                if (!state.taskPlan || !state.taskPlan.phases || state.taskPlan.phases.length === 0) {
+                    doc.setFontSize(12);
+                    doc.setTextColor(33, 37, 41);
+                    doc.text("No tasks planned.", 14, yPos);
+                    doc.save("Task_Plan.pdf");
+                    return;
+                }
+                
+                state.taskPlan.phases.forEach((phase, index) => {
+                    // Check page break before heading
+                    if (yPos > 260) {
+                        doc.addPage();
+                        yPos = 20;
+                    }
+                    
+                    // Phase Title
+                    doc.setFontSize(14);
+                    doc.setTextColor(79, 70, 229); // Indigo
+                    doc.setFont(undefined, 'bold');
+                    doc.text((index + 1) + ". " + phase.name, 14, yPos);
+                    
+                    yPos += 6;
+                    
+                    const tableData = [];
+                    if (phase.tasks && phase.tasks.length > 0) {
+                        phase.tasks.forEach(task => {
+                            tableData.push([
+                                task.title,
+                                task.isDone ? "Done" : "Pending"
+                            ]);
+                        });
+                    } else {
+                        tableData.push([
+                            "No tasks in this phase",
+                            "-"
+                        ]);
+                    }
+                    
+                    doc.autoTable({
+                        startY: yPos,
+                        head: [['Task Title', 'Status']],
+                        body: tableData,
+                        theme: 'plain',
+                        styles: { fontSize: 10, cellPadding: 4, lineColor: [226, 232, 240], lineWidth: 0.1 },
+                        headStyles: { fillColor: [248, 250, 252], textColor: [71, 85, 105], fontStyle: 'bold' },
+                        alternateRowStyles: { fillColor: [255, 255, 255] },
+                        didParseCell: function(data) {
+                            if (data.section === 'body' && data.column.index === 1) {
+                                if (data.cell.raw === 'Done') {
+                                    data.cell.styles.textColor = [16, 185, 129];
+                                    data.cell.styles.fontStyle = 'bold';
+                                } else if (data.cell.raw === 'Pending') {
+                                    data.cell.styles.textColor = [245, 158, 11];
+                                }
+                            }
+                        }
+                    });
+                    
+                    yPos = doc.lastAutoTable.finalY + 15;
+                });
+                
+                doc.save(state.projectName.replace(/\s+/g, '_') + "_Task_Plan.pdf");
+            },
+
+            downloadTaskExcel: () => {
+                if (typeof XLSX === 'undefined') {
+                    app.showToast("Excel export library not loaded.");
+                    return;
+                }
+                
+                const wb = XLSX.utils.book_new();
+                const data = [
+                    ["Phase", "Task Title", "Status"]
+                ];
+                
+                if (state.taskPlan && state.taskPlan.phases) {
+                    state.taskPlan.phases.forEach(phase => {
+                        if (phase.tasks && phase.tasks.length > 0) {
+                            phase.tasks.forEach(task => {
+                                data.push([
+                                    phase.name,
+                                    task.title,
+                                    task.isDone ? "Done" : "Pending"
+                                ]);
+                            });
+                        } else {
+                            data.push([
+                                phase.name,
+                                "No tasks in this phase",
+                                "-"
+                            ]);
+                        }
+                    });
+                }
+                
+                const ws = XLSX.utils.aoa_to_sheet(data);
+                ws['!cols'] = [
+                    { wch: 25 },
+                    { wch: 60 },
+                    { wch: 15 }
+                ];
+                XLSX.utils.book_append_sheet(wb, ws, "Tasks");
+                XLSX.writeFile(wb, state.projectName.replace(/\s+/g, '_') + "_Task_Plan.xlsx");
+            },
+
             exportPDF: () => {
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF();
@@ -1675,6 +1796,8 @@
             // --- Task Plan View Logic ---
             renderTaskView: () => {
                 const container = document.getElementById('task-view-container');
+                const phasesContainer = document.getElementById('task-phases-container');
+                const scrollLeft = phasesContainer ? phasesContainer.scrollLeft : 0;
                 
                 // Initialize if somehow broken
                 if (!state.taskPlan) state.taskPlan = { phases: [] };
@@ -1728,6 +1851,16 @@
                                     <div class="h-full bg-emerald-500 transition-all duration-500" style="width: ${tableProgress}%"></div>
                                 </div>
                             </div>
+                        </div>
+                        
+                        <!-- Download Buttons -->
+                        <div class="flex items-center gap-2 flex-shrink-0 border-l border-slate-200 pl-6 ml-2 hidden md:flex">
+                            <button onclick="app.downloadTaskPDF()" class="px-3 py-1.5 bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700 rounded-lg text-xs font-semibold shadow-sm transition-all flex items-center gap-1.5 border border-rose-200" title="Download Full Task Plan (PDF)">
+                                <i data-lucide="file-down" class="w-3.5 h-3.5"></i> PDF
+                            </button>
+                            <button onclick="app.downloadTaskExcel()" class="px-3 py-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700 rounded-lg text-xs font-semibold shadow-sm transition-all flex items-center gap-1.5 border border-emerald-200" title="Download Full Task Plan (Excel)">
+                                <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i> Excel
+                            </button>
                         </div>
                     </div>
                 
@@ -1887,6 +2020,11 @@
 
                 container.innerHTML = html;
                 lucide.createIcons({ root: container });
+
+                const newPhasesContainer = document.getElementById('task-phases-container');
+                if (newPhasesContainer) {
+                    newPhasesContainer.scrollLeft = scrollLeft;
+                }
             },
 
             renderTaskBadge: (tId, phaseId, phaseIndex) => {
