@@ -548,6 +548,62 @@
         </div>
     </div>
 
+    <!-- Delete Task Modal -->
+    <div id="delete-task-modal-backdrop" class="hidden fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center transition-opacity opacity-0">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden transform scale-95 transition-transform p-6" id="delete-task-modal-content">
+            <div class="flex flex-col items-center text-center gap-4">
+                <div class="w-12 h-12 rounded-full bg-rose-100 text-rose-500 flex items-center justify-center">
+                    <i data-lucide="trash-2" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-gray-800">Delete Task?</h3>
+                    <p class="text-sm text-slate-500 mt-1">Are you sure you want to delete "<span id="delete-task-name" class="font-semibold text-slate-700"></span>"?</p>
+                </div>
+                <div class="flex gap-3 w-full mt-2">
+                    <button onclick="app.closeDeleteTaskModal()" class="flex-1 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-colors">
+                        Cancel
+                    </button>
+                    <button onclick="app.confirmDeleteTask()" class="flex-1 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-medium transition-colors shadow-sm">
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Task Modal -->
+    <div id="edit-task-modal-backdrop" class="hidden fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center transition-opacity opacity-0">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden transform scale-95 transition-transform p-6" id="edit-task-modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-gray-800">Edit Task</h3>
+                <button onclick="app.closeEditTaskModal()" class="p-1 hover:bg-gray-100 rounded-full text-gray-500">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="flex flex-col gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Task Title</label>
+                    <div class="relative">
+                        <input type="text" id="edit-task-title" placeholder="e.g. Design user table" 
+                            class="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                            onkeyup="if(event.key === 'Enter') app.confirmEditTask()">
+                        <div class="absolute left-3 top-2.5 text-slate-400">
+                            <i data-lucide="edit-3" class="w-4 h-4"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex gap-3 w-full mt-2">
+                    <button onclick="app.closeEditTaskModal()" class="flex-1 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-colors">
+                        Cancel
+                    </button>
+                    <button onclick="app.confirmEditTask()" class="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors shadow-sm">
+                        Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Expand Modal -->
     <div id="expand-modal-backdrop" class="hidden fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center transition-opacity opacity-0" onclick="if(event.target === this) app.closeExpandModal()">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden transform scale-95 transition-transform" id="expand-modal-content">
@@ -845,6 +901,8 @@
                 document.getElementById('new-table-name').addEventListener('input', (e) => {
                     document.getElementById('name-preview').textContent = app.formatName(e.target.value) || '...';
                 });
+                
+                app.switchView(state.ui.activeView || 'board');
             },
 
             saveState: () => {
@@ -854,7 +912,8 @@
                     tables: state.tables,
                     relations: state.relations,
                     taskPlan: state.taskPlan,
-                    view: state.view
+                    view: state.view,
+                    activeView: state.ui.activeView
                 }));
             },
 
@@ -869,6 +928,7 @@
                         state.relations = parsed.relations || [];
                         state.taskPlan = parsed.taskPlan || { phases: [] };
                         state.view = parsed.view || { x: 0, y: 0, scale: 1 };
+                        if (parsed.activeView) state.ui.activeView = parsed.activeView;
                         state.ui.expandedNodes = new Set();
                     } catch (e) { console.error('Failed to load state', e); }
                 }
@@ -1405,6 +1465,7 @@
             // --- View Switching ---
             switchView: (mode) => {
                 state.ui.activeView = mode;
+                app.saveState();
                 const boardBtn = document.getElementById('btn-view-board');
                 const listBtn = document.getElementById('btn-view-list');
                 const treeBtn = document.getElementById('btn-view-tree');
@@ -1709,26 +1770,38 @@
                                     </div>
                                     <div class="px-3 pb-2 flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-1.5 min-h-[100px]">
                                         ${(phase.tasks || []).map(task => `
-                                            <div class="group flex items-start gap-2 bg-slate-50 border border-slate-100 p-2 rounded-lg hover:border-slate-300 transition-colors">
+                                            <div draggable="true" 
+                                                 ondragstart="app.taskItemDragStart(event, '${phase.id}', '${task.id}')"
+                                                 ondragover="app.taskItemDragOver(event)"
+                                                 ondrop="app.taskItemDrop(event, '${phase.id}', '${task.id}')"
+                                                 class="group flex items-start gap-1.5 bg-slate-50 border border-slate-100 p-2 rounded-lg hover:border-slate-300 hover:shadow-sm transition-colors cursor-grab active:cursor-grabbing">
+                                                <i data-lucide="grip-vertical" class="w-3.5 h-3.5 text-slate-300 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"></i>
                                                 <input type="checkbox" class="mt-1 w-3.5 h-3.5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer flex-shrink-0" 
                                                        ${task.isDone ? 'checked' : ''} 
                                                        onchange="app.toggleTaskDone('${phase.id}', '${task.id}', this.checked)">
                                                 <div class="flex-1 text-sm break-words ${task.isDone ? 'line-through text-slate-400' : 'text-slate-700'}">${task.title.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
-                                                <button onclick="app.removeTask('${phase.id}', '${task.id}')" class="text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 flex-shrink-0">
-                                                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                                                </button>
+                                                <div class="flex items-center opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 gap-1">
+                                                    <button onclick="app.editTask('${phase.id}', '${task.id}')" class="text-slate-400 hover:text-indigo-500 p-0.5 transition-colors" title="Edit Task">
+                                                        <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
+                                                    </button>
+                                                    <button onclick="app.openDeleteTaskModal('${phase.id}', '${task.id}')" class="text-slate-400 hover:text-rose-500 p-0.5 transition-colors" title="Delete Task">
+                                                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                                    </button>
+                                                </div>
                                             </div>
                                         `).join('')}
                                         ${(phase.tasks || []).length === 0 ? `<div class="text-xs text-slate-400 italic text-center py-2">No tasks added</div>` : ''}
                                     </div>
                                     
                                     <!-- Add Task Input -->
-                                    <div class="p-3 pt-2 relative border-t border-slate-100 flex-none bg-slate-50/50">
-                                        <input type="text" placeholder="Add a task..." class="w-full text-sm bg-white border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all pr-8"
-                                            onkeypress="if(event.key === 'Enter') { app.addTask('${phase.id}', this.value); this.value=''; }">
-                                        <button class="absolute right-5 top-1/2 -translate-y-1/2 mt-1 text-indigo-500 hover:text-indigo-700" onclick="const inp = this.previousElementSibling; if(inp.value) { app.addTask('${phase.id}', inp.value); inp.value=''; }">
-                                            <i data-lucide="plus" class="w-4 h-4"></i>
-                                        </button>
+                                    <div class="p-3 pt-2 border-t border-slate-100 flex-none bg-slate-50/50">
+                                        <div class="relative">
+                                            <input type="text" placeholder="Add a task..." class="w-full text-sm bg-white border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all pr-8"
+                                                onkeypress="if(event.key === 'Enter') { app.addTask('${phase.id}', this.value); this.value=''; }">
+                                            <button class="absolute right-2 top-1/2 -translate-y-1/2 text-indigo-500 hover:text-indigo-700 p-0.5" onclick="const inp = this.previousElementSibling; if(inp.value) { app.addTask('${phase.id}', inp.value); inp.value=''; }">
+                                                <i data-lucide="plus" class="w-4 h-4"></i>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -1839,15 +1912,19 @@
 
                 return `
                     <div draggable="true" ondragstart="app.taskDragStart(event, '${t.id}', '${phaseId}')" 
-                         class="px-2.5 py-1 border ${borderClass} rounded-full shadow-sm cursor-grab flex items-center justify-center text-center group transition-all text-xs font-semibold relative">
-                        <div class="flex items-center justify-center w-full">
-                            <i data-lucide="grip-vertical" class="w-3 h-3 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity hidden group-hover:block -ml-1 mr-0.5"></i>
-                            <span class="flex items-center gap-1 justify-center">${t.name}</span>
+                         class="px-1.5 py-1 border ${borderClass} rounded-full shadow-sm cursor-grab flex items-center justify-between group transition-all text-xs font-semibold relative max-w-full">
+                        <div class="w-4 flex-shrink-0 flex items-center justify-center">
+                            <i data-lucide="grip-vertical" class="w-3 h-3 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                        </div>
+                        <div class="flex-1 truncate px-0.5 flex items-center justify-center">
+                            <span class="truncate">${t.name}</span>
                             ${warningHtml}
                         </div>
-                        <button onclick="app.taskRemoveTable('${phaseId}', '${t.id}')" class="text-slate-400 hover:text-rose-500 rounded p-0.5 opacity-0 group-hover:opacity-100 transition-all absolute right-0.5" title="Remove from phase">
-                            <i data-lucide="x" class="w-3 h-3"></i>
-                        </button>
+                        <div class="w-4 flex-shrink-0 flex items-center justify-center">
+                            <button onclick="app.taskRemoveTable('${phaseId}', '${t.id}')" class="text-slate-400 hover:text-rose-500 rounded opacity-0 group-hover:opacity-100 transition-opacity" title="Remove from phase">
+                                <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
                     </div>
                 `;
             },
@@ -1909,12 +1986,48 @@
                 }
             },
 
-            removeTask: (phaseId, taskId) => {
+            openDeleteTaskModal: (phaseId, taskId) => {
                 const phase = state.taskPlan.phases.find(p => p.id === phaseId);
+                if (!phase || !phase.tasks) return;
+                const task = phase.tasks.find(t => t.id === taskId);
+                if (!task) return;
+
+                state.ui.deletingPhaseId = phaseId;
+                state.ui.deletingTaskId = taskId;
+
+                document.getElementById('delete-task-name').textContent = task.title;
+
+                const backdrop = document.getElementById('delete-task-modal-backdrop');
+                const content = document.getElementById('delete-task-modal-content');
+                backdrop.classList.remove('hidden');
+                setTimeout(() => {
+                    backdrop.classList.remove('opacity-0');
+                    content.classList.remove('scale-95');
+                    content.classList.add('scale-100');
+                }, 10);
+            },
+
+            closeDeleteTaskModal: () => {
+                const backdrop = document.getElementById('delete-task-modal-backdrop');
+                const content = document.getElementById('delete-task-modal-content');
+                backdrop.classList.add('opacity-0');
+                content.classList.remove('scale-100');
+                content.classList.add('scale-95');
+                setTimeout(() => {
+                    backdrop.classList.add('hidden');
+                    state.ui.deletingPhaseId = null;
+                    state.ui.deletingTaskId = null;
+                }, 200);
+            },
+
+            confirmDeleteTask: () => {
+                if (!state.ui.deletingPhaseId || !state.ui.deletingTaskId) return;
+                const phase = state.taskPlan.phases.find(p => p.id === state.ui.deletingPhaseId);
                 if (phase && phase.tasks) {
-                    phase.tasks = phase.tasks.filter(t => t.id !== taskId);
+                    phase.tasks = phase.tasks.filter(t => t.id !== state.ui.deletingTaskId);
                     app.saveState();
                     app.renderTaskView();
+                    app.closeDeleteTaskModal();
                 }
             },
 
@@ -1930,8 +2043,115 @@
                 }
             },
 
+            editTask: (phaseId, taskId) => {
+                const phase = state.taskPlan.phases.find(p => p.id === phaseId);
+                if (!phase || !phase.tasks) return;
+                const task = phase.tasks.find(t => t.id === taskId);
+                if (!task) return;
+                
+                state.ui.editingPhaseId = phaseId;
+                state.ui.editingTaskId = taskId;
+                
+                const input = document.getElementById('edit-task-title');
+                input.value = task.title;
+                
+                const backdrop = document.getElementById('edit-task-modal-backdrop');
+                const content = document.getElementById('edit-task-modal-content');
+                backdrop.classList.remove('hidden');
+                setTimeout(() => {
+                    backdrop.classList.remove('opacity-0');
+                    content.classList.remove('scale-95');
+                    content.classList.add('scale-100');
+                    input.focus();
+                }, 10);
+            },
+
+            closeEditTaskModal: () => {
+                const backdrop = document.getElementById('edit-task-modal-backdrop');
+                const content = document.getElementById('edit-task-modal-content');
+                backdrop.classList.add('opacity-0');
+                content.classList.remove('scale-100');
+                content.classList.add('scale-95');
+                setTimeout(() => {
+                    backdrop.classList.add('hidden');
+                    state.ui.editingPhaseId = null;
+                    state.ui.editingTaskId = null;
+                }, 200);
+            },
+
+            confirmEditTask: () => {
+                if (!state.ui.editingPhaseId || !state.ui.editingTaskId) return;
+                const phase = state.taskPlan.phases.find(p => p.id === state.ui.editingPhaseId);
+                if (!phase || !phase.tasks) return;
+                const task = phase.tasks.find(t => t.id === state.ui.editingTaskId);
+                if (!task) return;
+                
+                const input = document.getElementById('edit-task-title');
+                const newTitle = input.value.trim();
+                if (newTitle) {
+                    task.title = newTitle;
+                    app.saveState();
+                    app.renderTaskView();
+                    app.closeEditTaskModal();
+                }
+            },
+
+            taskItemDragStart: (e, phaseId, taskId) => {
+                e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'task', sourcePhaseId: phaseId, taskId: taskId }));
+                e.dataTransfer.effectAllowed = 'move';
+                e.stopPropagation();
+            },
+
+            taskItemDragOver: (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+            },
+
+            taskItemDrop: (e, targetPhaseId, targetTaskId) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const data = e.dataTransfer.getData('text/plain');
+                if (!data) return;
+                
+                try {
+                    const parsed = JSON.parse(data);
+                    if (parsed.type === 'task') {
+                        app.moveTask(parsed.sourcePhaseId, parsed.taskId, targetPhaseId, targetTaskId);
+                    }
+                } catch(err) { console.error('Task drop error', err); }
+            },
+            
+            moveTask: (sourcePhaseId, taskId, targetPhaseId, targetTaskId) => {
+                const sourcePhase = state.taskPlan.phases.find(p => p.id === sourcePhaseId);
+                const targetPhase = state.taskPlan.phases.find(p => p.id === targetPhaseId);
+                
+                if (!sourcePhase || !targetPhase || !sourcePhase.tasks) return;
+                
+                const taskIndex = sourcePhase.tasks.findIndex(t => t.id === taskId);
+                if (taskIndex === -1) return;
+                
+                const [task] = sourcePhase.tasks.splice(taskIndex, 1);
+                
+                if (!targetPhase.tasks) targetPhase.tasks = [];
+                
+                if (targetTaskId) {
+                    const targetIndex = targetPhase.tasks.findIndex(t => t.id === targetTaskId);
+                    if (targetIndex !== -1) {
+                        targetPhase.tasks.splice(targetIndex, 0, task);
+                    } else {
+                        targetPhase.tasks.push(task);
+                    }
+                } else {
+                    targetPhase.tasks.push(task);
+                }
+                
+                app.saveState();
+                app.renderTaskView();
+            },
+
             taskDragStart: (e, tableId, sourcePhaseId) => {
-                e.dataTransfer.setData('text/plain', JSON.stringify({ tableId, sourcePhaseId }));
+                e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'table', tableId, sourcePhaseId }));
                 e.dataTransfer.effectAllowed = 'move';
             },
 
@@ -1941,7 +2161,16 @@
                 if (!data) return;
                 
                 try {
-                    const { tableId, sourcePhaseId } = JSON.parse(data);
+                    const parsed = JSON.parse(data);
+
+                    if (parsed.type === 'task') {
+                        app.moveTask(parsed.sourcePhaseId, parsed.taskId, targetPhaseId, null);
+                        return;
+                    }
+
+                    const tableId = parsed.tableId;
+                    const sourcePhaseId = parsed.sourcePhaseId;
+                    if (!tableId) return;
 
                     // If it was in a phase before, remove it
                     if (sourcePhaseId) {
@@ -2095,7 +2324,7 @@
                 state.tables.forEach(t => { adj[t.id] = []; inDegree[t.id] = 0; });
                 
                 state.relations.forEach(r => {
-                    if (adj[r.fromTableId]) {
+                    if (adj[r.fromTableId] && !adj[r.fromTableId].includes(r.toTableId)) {
                         adj[r.fromTableId].push(r.toTableId);
                         inDegree[r.toTableId] = (inDegree[r.toTableId] || 0) + 1;
                     }
@@ -2103,43 +2332,72 @@
 
                 const roots = state.tables.filter(t => inDegree[t.id] === 0);
                 let nodesToRender = [...roots];
+                
+                // Ensure tables in isolated cycles are also rendered
+                const reachable = new Set();
+                const dfs = (tId) => {
+                    if (reachable.has(tId)) return;
+                    reachable.add(tId);
+                    (adj[tId] || []).forEach(dfs);
+                };
+                roots.forEach(r => dfs(r.id));
+                
+                state.tables.forEach(t => {
+                    if (!reachable.has(t.id)) {
+                        nodesToRender.push(t);
+                        dfs(t.id);
+                    }
+                });
+
                 if(nodesToRender.length === 0 && state.tables.length > 0) nodesToRender = [state.tables[0]];
 
                 const renderNode = (tableId, parentPath = 'root', depth = 0, visited = new Set()) => {
-                    if (visited.has(tableId)) return ''; 
-                    const currentPath = `${parentPath}/${tableId}`;
-                    
                     const table = state.tables.find(t => t.id === tableId);
                     if (!table) return '';
-
+                    
+                    const paddingLeft = depth > 0 ? 'ml-6 border-l-2 border-slate-200 pl-3' : '';
+                    
+                    if (visited.has(tableId)) {
+                        return `
+                            <div class="mb-2 ${paddingLeft} transition-all">
+                                <div class="flex items-center gap-2 group">
+                                    <div class="w-6 h-6 flex-shrink-0"></div>
+                                    <div class="flex-1 bg-slate-50/70 rounded-lg border border-slate-200 p-2 flex items-center gap-2 opacity-70">
+                                        <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-slate-400"></i>
+                                        <span class="font-medium text-slate-500 text-sm">${table.name} <span class="text-xs font-normal text-slate-400">(Repeated)</span></span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    const currentPath = `${parentPath}/${tableId}`;
                     const children = adj[tableId] || [];
                     const hasChildren = children.length > 0;
                     const isExpanded = state.ui.expandedNodes.has(currentPath);
                     const baseColor = table.color ? table.color.split('-')[1] : 'blue';
 
-                    const paddingLeft = depth > 0 ? 'ml-6 border-l-2 border-slate-200 pl-3' : '';
-
                     let html = `
                         <div class="mb-2 ${paddingLeft} transition-all">
                             <div class="flex items-center gap-2 group">
                                 <button onclick="app.toggleTreeNode('${currentPath}')" 
-                                     class="w-6 h-6 flex items-center justify-center rounded hover:bg-slate-200 text-slate-400 transition-colors ${!hasChildren ? 'invisible' : ''}">
+                                     class="w-6 h-6 flex-shrink-0 flex items-center justify-center rounded hover:bg-slate-200 text-slate-400 transition-colors ${!hasChildren ? 'invisible' : ''}">
                                     <i data-lucide="chevron-right" class="w-4 h-4 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}"></i>
                                 </button>
                                 
-                                <div class="flex-1 bg-white rounded-lg border border-slate-200 shadow-sm p-3 hover:shadow-md transition-all flex items-center gap-3 relative overflow-hidden"
+                                <div class="flex-1 bg-white rounded-lg border border-slate-200 shadow-sm p-3 hover:shadow-md transition-all flex items-center gap-3 relative overflow-hidden cursor-pointer"
                                       onclick="app.toggleTreeNode('${currentPath}')">
                                     <div class="absolute left-0 top-0 bottom-0 w-1 bg-${baseColor}-500"></div>
-                                    <div class="p-1.5 rounded-md bg-${baseColor}-50 text-${baseColor}-600">
+                                    <div class="p-1.5 rounded-md bg-${baseColor}-50 text-${baseColor}-600 flex-shrink-0">
                                         <i data-lucide="table-2" class="w-4 h-4"></i>
                                     </div>
-                                    <div class="flex flex-col">
-                                        <div class="flex items-center gap-2">
-                                            <span class="font-bold text-slate-700 text-sm">${table.name}</span>
-                                            <span class="text-[10px] bg-slate-100 text-slate-500 px-1.5 rounded-full border border-slate-100">${table.fields.length}</span>
+                                    <div class="flex flex-col min-w-0">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <span class="font-bold text-slate-700 text-sm truncate">${table.name}</span>
+                                            <span class="text-[10px] bg-slate-100 text-slate-500 px-1.5 rounded-full border border-slate-100 flex-shrink-0">${table.fields.length}</span>
                                         </div>
-                                        <div class="text-[10px] text-slate-400 font-mono flex gap-2">
-                                            ${table.fields.slice(0, 3).map(f => f.name).join(', ')}${table.fields.length > 3 ? '...' : ''}
+                                        <div class="text-[10px] text-slate-400 font-mono flex flex-wrap gap-x-2 gap-y-1">
+                                            ${table.fields.map(f => `<span>${f.name}</span>`).join('<span class="text-slate-300">,</span>')}
                                         </div>
                                     </div>
                                 </div>
